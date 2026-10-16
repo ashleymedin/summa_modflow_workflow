@@ -21,3 +21,15 @@ SUMMA_ROOT=/path/to/summa ./test_mflow/run_sagehen1.sh
 
 Run output (`simulations/`, `*_run/`, MODFLOW listing and binary files) is not meant to be kept; see
 `.gitignore`.
+
+Scripts that build inputs for SUMMA–MODFLOW runs, beside the `summa` checkout.
+
+- `acquire_streamflow.py`: daily streamflow from the Water Survey of Canada or the USGS, in m3 s-1
+- `acquire_stream_temperature.py`: daily water temperature at a USGS gauge, in degC
+- `acquire_grace_tws.py`: the JPL GRACE/GRACE-FO mascon anomaly for a basin or a GRU, in mm (downloading needs a NASA Earthdata login)
+- `acquire_groundwater_level.py`: daily or field-measured water level in a USGS well, relative to land surface in m, positive up
+- `observation_netcdf.py`: the writer they share, in the form a SUMMA calibration target reads
+- `add_stream_hru.py`: give a single-GRU domain a stream HRU and a one-reach mizuRoute topology
+- `add_stream_network.py`: split tributary GRUs off that domain, each with its own reach, from a JSON spec
+
+Each script's `--help` gives its arguments and an example.
