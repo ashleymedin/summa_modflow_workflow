@@ -1,0 +1,22 @@
+# MODFLOW 6 simulation name file - Sagehen, configured for the SUMMA coupler
+#   * single GWF model "SAGEHEN", DIS grid
+#   * TDIS in SECONDS, MODFLOW time step = SUMMA forcing data_step (3600 s here)
+#   * RCH package "RCHA" with READASARRAYS  (recharge supplied by SUMMA each step)
+# Built from the ex-gwf-sagehen array files in this directory.
+BEGIN OPTIONS
+END OPTIONS
+
+BEGIN TIMING
+  TDIS6  sagehen.tdis
+END TIMING
+
+BEGIN MODELS
+  GWF6  sagehen.nam  SAGEHEN
+END MODELS
+
+BEGIN EXCHANGES
+END EXCHANGES
+
+BEGIN SOLUTIONGROUP 1
+  IMS6  sagehen.ims  SAGEHEN
+END SOLUTIONGROUP 1

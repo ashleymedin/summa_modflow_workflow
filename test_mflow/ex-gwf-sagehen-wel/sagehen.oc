@@ -1,0 +1,11 @@
+# Output control - heads every step, so the drawdown can be set against SUMMA's lower boundary.
+BEGIN OPTIONS
+  BUDGET  FILEOUT  sagehen.cbc
+  HEAD    FILEOUT  sagehen.hds
+END OPTIONS
+
+BEGIN PERIOD 1
+  SAVE  HEAD    ALL
+  SAVE  BUDGET  FREQUENCY 24
+  SAVE  BUDGET  LAST
+END PERIOD

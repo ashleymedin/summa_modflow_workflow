@@ -1,0 +1,18 @@
+# Little River, Georgia, for the SUMMA coupler; written by tools/build_littleriver.py
+BEGIN OPTIONS
+END OPTIONS
+
+BEGIN TIMING
+  TDIS6  littleriver.tdis
+END TIMING
+
+BEGIN MODELS
+  GWF6  littleriver.nam  LITTLERIVER
+END MODELS
+
+BEGIN EXCHANGES
+END EXCHANGES
+
+BEGIN SOLUTIONGROUP 1
+  IMS6  littleriver.ims  LITTLERIVER
+END SOLUTIONGROUP 1

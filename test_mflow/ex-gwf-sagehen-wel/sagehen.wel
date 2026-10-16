@@ -1,0 +1,14 @@
+# One well pumping 500 m3 a day from the valley side of GRU 5 (row 11, column 67, HRU 2265), where the settled
+# water table sits about 1 m above the soil-column base. Prescribed, so the coupler does not see it.
+BEGIN OPTIONS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN DIMENSIONS
+  MAXBOUND  1
+END DIMENSIONS
+
+BEGIN PERIOD 1
+# lay row col  q (m3 s-1)
+    1  11  67  -5.787037e-3
+END PERIOD

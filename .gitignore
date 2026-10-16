@@ -1,0 +1,18 @@
+# run output of the coupled cases
+test_mflow/domain_*/simulations/**/*
+!test_mflow/domain_*/simulations/**/
+!test_mflow/domain_*/simulations/**/.gitkeep
+test_mflow/ex-gwf-*/*.lst
+test_mflow/ex-gwf-*/*.hds
+test_mflow/ex-gwf-*/*.cbc
+test_mflow/ex-gwf-*/*.ucn
+test_mflow/ex-gwf-*/*.stdout
+test_mflow/ex-gwf-*/*.dis.grb
+test_mflow/ex-gwf-*/*.csv
+
+# run output of the calibrations
+test_calibration/*_run/
+test_calibration/*.log
+
+__pycache__/
+.DS_Store

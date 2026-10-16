@@ -1,0 +1,20 @@
+# Storage - transient, convertible (water-table) storage from sy1.txt.
+# SY is the active parameter for the water-table layer; SS is kept small (1e-7) so the
+# few cells that start above land surface do not release a destabilising confined-storage
+# pulse in the first hours of the transient.
+BEGIN OPTIONS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN GRIDDATA
+  ICONVERT
+    CONSTANT  1
+  SS
+    CONSTANT  1.0e-7
+  SY
+    OPEN/CLOSE  sy1.txt
+END GRIDDATA
+
+BEGIN PERIOD 1
+  TRANSIENT
+END PERIOD

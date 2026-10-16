@@ -1,0 +1,29 @@
+averageRoutedRunoff | 24
+scalarSWE | 24
+scalarCanopyWat | 24
+scalarTotalSoilWat | 24
+scalarAquiferStorage | 24
+scalarNetRadiation | 24
+scalarLatHeatTotal | 24
+scalarSenHeatTotal | 24
+
+
+
+scalarRainPlusMelt | 24
+scalarTotalET | 24
+scalarSurfaceRunoff | 24
+scalarInfiltration | 24
+scalarSoilDrainage | 24
+scalarSoilBaseflow | 24
+scalarAquiferBaseflow | 24
+scalarTotalRunoff | 24
+scalarAquiferSeepage | 24
+scalarAquiferTranspire | 24
+scalarTranspireLimAqfr | 24
+scalarAquiferRootFrac | 24
+scalarCanopyTranspiration | 24
+mLayerColumnInflow | 24
+mLayerColumnOutflow | 24
+scalarStreamTemp | 24
+scalarStreamRunoff | 24
+basin__TotalRunoff | 24

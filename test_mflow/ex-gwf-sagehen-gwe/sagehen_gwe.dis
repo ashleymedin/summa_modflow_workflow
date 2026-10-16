@@ -1,0 +1,27 @@
+# Structured discretisation: 1 layer, 73 rows, 81 cols, 90 m cells.
+# IDOMAIN (idomain1.txt) = 0 where the native ibnd1.txt is 0, else 1.
+# TOP is the soil-column base, 4 m below the native land surface (land1.txt); BOTM and the
+# other arrays are the native ex-gwf-sagehen text arrays (row-major, 73 x 81).
+BEGIN OPTIONS
+  LENGTH_UNITS  METERS
+  NOGRB
+END OPTIONS
+
+BEGIN DIMENSIONS
+  NLAY  1
+  NROW  73
+  NCOL  81
+END DIMENSIONS
+
+BEGIN GRIDDATA
+  DELR
+    CONSTANT  90.0
+  DELC
+    CONSTANT  90.0
+  TOP
+    OPEN/CLOSE  top1.txt
+  BOTM
+    OPEN/CLOSE  bot1.txt
+  IDOMAIN
+    OPEN/CLOSE  idomain1.txt
+END GRIDDATA

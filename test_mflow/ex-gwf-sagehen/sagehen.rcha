@@ -1,0 +1,14 @@
+# Array-based recharge (READASARRAYS).  The SUMMA coupler overwrites the RECHARGE
+# array in memory (SAGEHEN/RCHA/RECHARGE) every time step with the regridded SUMMA
+# soil-column drainage, in m/s.  The constant below is only the pre-coupling default
+# used when running mf6 stand-alone; it is a small non-zero background rate so the
+# water table does not collapse (and diverge) over a long zero-recharge stand-alone run.
+BEGIN OPTIONS
+  READASARRAYS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PERIOD 1
+  RECHARGE
+    CONSTANT  1.0e-8
+END PERIOD

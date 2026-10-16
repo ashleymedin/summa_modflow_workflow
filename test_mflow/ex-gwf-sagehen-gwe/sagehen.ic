@@ -1,0 +1,8 @@
+# Initial conditions - starting heads from strt1.txt (m).
+BEGIN OPTIONS
+END OPTIONS
+
+BEGIN GRIDDATA
+  STRT
+    OPEN/CLOSE  strt1.txt
+END GRIDDATA

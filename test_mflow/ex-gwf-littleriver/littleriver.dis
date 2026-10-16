@@ -1,0 +1,27 @@
+# 200 m cells in EPSG:32617; TOP is the base of SUMMA's 2.0 m soil column, land surface in land1.txt.
+# BOTM is land surface less the SoilGrids depth to bedrock, at least 5.0 m below TOP.
+BEGIN OPTIONS
+  LENGTH_UNITS  METERS
+  XORIGIN  236200.0
+  YORIGIN  3484000.0
+  ANGROT  0.0
+END OPTIONS
+
+BEGIN DIMENSIONS
+  NLAY  1
+  NROW  168
+  NCOL  127
+END DIMENSIONS
+
+BEGIN GRIDDATA
+  DELR
+    CONSTANT  200.0
+  DELC
+    CONSTANT  200.0
+  TOP
+    OPEN/CLOSE  top1.txt
+  BOTM
+    OPEN/CLOSE  bot1.txt
+  IDOMAIN
+    OPEN/CLOSE  idomain1.txt
+END GRIDDATA

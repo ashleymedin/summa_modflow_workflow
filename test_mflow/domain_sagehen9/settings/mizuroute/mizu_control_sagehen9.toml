@@ -1,0 +1,42 @@
+# mizuRoute control file for domain_sagehen9: the 9 reaches of the Sagehen channel network.
+# Paths are relative to the working directory, which is the MODFLOW case (ex-gwf-sagehen), as
+# the paths in summa_modflow6.config and fileManager_latflow.txt are.  Everything SUMMA needs
+# is in its file manager; this file adds the river network alone.
+
+[simulation]
+
+use_mizuroute = true
+
+[mizuRoute]
+
+namelist_path = "../domain_sagehen9/settings/mizuroute/"
+namelist_file = "mizuroute.param"
+
+methods = "3"    # kinematic wave, the one method the stream domains read hydraulics from
+
+dt = 3600        # matches the SUMMA data step and sagehen.tdis
+
+write_qbasin = true
+write_Qreach = true
+
+[hydrofabric]
+
+hfabric_path = "../domain_sagehen9/"
+hfabric_file = "topology.nc"
+
+dname_seg = "seg"
+dname_hru = "hru"
+
+varname_HRUid     = "hruId"
+varname_segId     = "segId"
+varname_hruSegId  = "hruToSegId"
+varname_downSegId = "downSegId"
+
+varname_area   = "area"
+varname_slope  = "slope"
+varname_length = "length"
+
+# No seg_outlet: the whole network is routed, so the outlet is the reach with the largest upstream
+# area, reach 9.  Naming it would put mizuRoute in subset mode, which rewrites the topology file.
+
+# No [remapping]: routing HRU id is the SUMMA GRU id, one for one, so GRU runoff needs no weights.

@@ -1,0 +1,20 @@
+controlVersion       'SUMMA_FILE_MANAGER_V3.0.0' ! file manager version
+simStartTime         '2017-02-07 00:00' !
+simEndTime           '2017-02-09 23:00' ! 72 hourly steps, matches mf6/sagehen.tdis
+tmZoneInfo           'utcTime' !
+outFilePrefix        'run1_latflow' !
+settingsPath         '../domain_sagehen4/settings/SUMMA/' ! relative to the MODFLOW case dir (coupler cwd)
+forcingPath          '../domain_sagehen4/forcing/SUMMA_input/' !
+outputPath           '../domain_sagehen4/simulations/run_1/SUMMA/' !
+initConditionFile    'coldState.nc' ! Relative to settingsPath
+attributeFile        'attributes.nc' ! Relative to settingsPath
+trialParamFile       'trialParams.nc' ! Relative to settingsPath
+forcingListFile      'forcingFileList.txt' !
+decisionsFile        'modelDecisions_latflow.txt' ! Relative to settingsPath
+outputControlFile    'outputControl.txt' ! Relative to settingsPath
+globalHruParamFile   'localParamInfo.txt' ! Relative to settingsPath
+globalGruParamFile   'basinParamInfo.txt' ! Relative to settingsPath
+vegTableFile         'TBL_VEGPARM.TBL' ! Relative to settingsPath
+soilTableFile        'TBL_SOILPARM.TBL' ! Relative to settingsPath
+generalTableFile     'TBL_GENPARM.TBL' ! Relative to settingsPath
+noahmpTableFile      'TBL_MPTABLE.TBL' ! Relative to settingsPath

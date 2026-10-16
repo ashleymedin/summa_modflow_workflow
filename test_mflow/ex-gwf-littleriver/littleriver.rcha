@@ -1,0 +1,15 @@
+# The coupler overwrites RECHARGE each transient step; the steady period takes 184 mm/yr.
+BEGIN OPTIONS
+  READASARRAYS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PERIOD 1
+  RECHARGE
+    CONSTANT  5.830608e-09
+END PERIOD
+
+BEGIN PERIOD 2
+  RECHARGE
+    CONSTANT  0.0
+END PERIOD

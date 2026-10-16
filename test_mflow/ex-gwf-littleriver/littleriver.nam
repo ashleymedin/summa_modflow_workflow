@@ -1,0 +1,17 @@
+BEGIN OPTIONS
+  NEWTON  UNDER_RELAXATION
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PACKAGES
+  DIS6   littleriver.dis   dis
+  IC6    littleriver.ic    ic
+  NPF6   littleriver.npf   npf
+  STO6   littleriver.sto   sto
+  UZF6   littleriver.uzf   UZF
+  RCH6   littleriver.rcha  RCHA
+  SFR6   littleriver.sfr   SFR
+  DRN6   littleriver.drn   DRN
+  OBS6   littleriver.obs   obs
+  OC6    littleriver.oc    oc
+END PACKAGES

@@ -1,0 +1,24 @@
+# Array-based recharge (READASARRAYS).  The SUMMA coupler overwrites the RECHARGE
+# array in memory (SAGEHEN/RCHA/RECHARGE) every time step with the regridded SUMMA
+# soil-column drainage, in m/s.  The constant below is only the pre-coupling default
+# used when running mf6 stand-alone; it is a small non-zero background rate so the
+# water table does not collapse (and diverge) over a long zero-recharge stand-alone run.
+BEGIN OPTIONS
+  READASARRAYS
+  SAVE_FLOWS
+END OPTIONS
+
+# PERIOD 1 is the steady-state spin-up: this array IS used, and should be a climatological
+# mean recharge for the basin.  The coupler does not overwrite it, because equilibrating an
+# aquifer against one hour of instantaneous SUMMA drainage would be meaningless.
+BEGIN PERIOD 1
+  RECHARGE
+    CONSTANT  1.0e-8
+END PERIOD
+
+# PERIOD 2 is the coupled transient period: the coupler overwrites this array every step
+# with SUMMA's regridded soil drainage, so the value here is only a placeholder.
+BEGIN PERIOD 2
+  RECHARGE
+    CONSTANT  1.0e-8
+END PERIOD

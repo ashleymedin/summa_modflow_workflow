@@ -1,0 +1,6 @@
+# Thermal equilibrium from tools/build_sagehen_gwe.py, degC: 10000 years of steady flow, recharge at
+# 6.2 degC at 1932 m less 6.5 degC km-1, and 68 mW m-2 geothermal flux.
+BEGIN GRIDDATA
+  STRT
+    OPEN/CLOSE  strt_gwe1.txt
+END GRIDDATA

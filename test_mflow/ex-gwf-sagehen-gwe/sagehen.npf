@@ -1,0 +1,15 @@
+# Node property flow.  ICELLTYPE 1 -> convertible (unconfined) with Newton.
+# kh1.txt / kv1.txt hold the upstream ex-gwf-sagehen values in m/DAY (0.005-0.3);
+# this model runs TIME_UNITS SECONDS, so FACTOR 1/86400 converts them to m/s.
+BEGIN OPTIONS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN GRIDDATA
+  ICELLTYPE
+    CONSTANT  1
+  K
+    OPEN/CLOSE  kh1.txt  FACTOR  1.15740740740741e-5
+  K33
+    OPEN/CLOSE  kv1.txt  FACTOR  1.15740740740741e-5
+END GRIDDATA

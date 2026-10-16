@@ -1,0 +1,37 @@
+# Array-based evapotranspiration (READASARRAYS) - groundwater ET (section 8.1).
+#
+# The coupler overwrites the RATE array in memory (SAGEHEN/EVTA/RATE) every step with SUMMA's
+# aquifer transpiration demand: the share of canopy transpiration its deep roots want from below
+# the soil column.  What MODFLOW actually supplies comes back through the gw_et role.
+#
+# WHY DEPTH IS LARGE, NOT rootingDepth - soilDepth.
+#
+# The rate SUMMA sends has ALREADY been reduced by scalarTranspireLimAqfr, the water-table ramp in
+# soilResist - that reduction is what tells stomatal resistance how much deep water is available,
+# so it cannot be left out on the SUMMA side.  If EVT then applied its own extinction ramp on top,
+# the same limit would be imposed twice and extraction would be short by that factor: measured on
+# this domain as exactly 0.5417, which is the cell-wise mean of the ramp.
+#
+# So EVT is configured NOT to re-limit.  SURFACE sits at the base of the SUMMA soil column, where
+# psi is measured, and DEPTH is large enough that the proportion is 1 over the whole plausible
+# water-table range.  MODFLOW still refuses what a drying cell cannot supply, which is the part
+# SUMMA genuinely cannot know.
+#
+# The residual disagreement is aggregation, not double counting: SUMMA forms one limiting factor
+# from the HRU-mean water table while the real ramp is a clipped nonlinear function of a
+# water-table distribution spanning tens of metres within a single HRU.  See the write-up.
+BEGIN OPTIONS
+  READASARRAYS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PERIOD 1
+  IEVT
+    CONSTANT  1
+  SURFACE
+    OPEN/CLOSE  evtsurf1.txt
+  RATE
+    CONSTANT  0.0
+  DEPTH
+    CONSTANT  1000.0
+END PERIOD

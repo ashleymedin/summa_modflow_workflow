@@ -1,0 +1,24 @@
+# Time discretisation - SECONDS, two stress periods.
+#   Period 1 is STEADY STATE: one step that equilibrates the water table against a
+#     climatological mean recharge before the coupling starts.  This is what the upstream
+#     MODFLOW 6 Sagehen example does and what the coupled model lacked (section 8.5).
+#     The coupler detects it through <MODEL>/ISS, solves it with the RCH PERIOD 1 array
+#     (NOT with SUMMA drainage), and starts the coupled loop on the first transient step.
+#     perlen is nominal for a steady-state solve; 1 s keeps it out of the way of the
+#     "MODFLOW simulation shorter than SUMMA" check.
+#   Period 2 is the TRANSIENT coupled period, and its step length must equal SUMMA's
+#     data_step (3600 s), with at least as many steps as SUMMA has data steps.
+#     552 steps covers the longest run, the 2017-01-15 .. 2017-02-06 spin-up.
+BEGIN OPTIONS
+  TIME_UNITS  SECONDS
+END OPTIONS
+
+BEGIN DIMENSIONS
+  NPER  2
+END DIMENSIONS
+
+BEGIN PERIODDATA
+#  perlen      nstp   tsmult
+   1.0         1      1.0
+   1987200.0   552    1.0
+END PERIODDATA

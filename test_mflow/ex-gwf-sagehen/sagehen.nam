@@ -1,0 +1,20 @@
+# GWF model name file for model SAGEHEN.
+# Newton-Raphson for the unconfined (convertible) layer.
+BEGIN OPTIONS
+  NEWTON  UNDER_RELAXATION
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PACKAGES
+  DIS6   sagehen.dis   dis
+  IC6    sagehen.ic    ic
+  NPF6   sagehen.npf   npf
+  STO6   sagehen.sto   sto
+  UZF6   sagehen.uzf   UZF
+  RCH6   sagehen.rcha  RCHA
+  CHD6   sagehen.chd   chd
+  DRN6   sagehen.drn   DRN
+  GHB6   sagehen.ghbb  GHBB
+  DRN6   sagehen.drnb  DRNB
+  OC6    sagehen.oc    oc
+END PACKAGES
