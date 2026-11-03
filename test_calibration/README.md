@@ -19,9 +19,9 @@ model's value too: the twin experiment below found these targets cannot see a VK
 and `syzone1.txt` (3) from the model's own value classes, for zone multipliers.
 
 Sagehen has no observation well, so the test makes one up. It sits on the lower valley side two cells
-from the channel above the gauge (row 41, column 75, in GRU 7), where the water table is about 15 m
-down, below 11 m of UZF. The 2017 snowmelt reaches it in October, 0.67 m above its May low, and it falls
-0.54 m through dry water year 2018; the valley floor
+from the channel above the gauge (row 41, column 75, in GRU 7), where the water table is about 16 m
+down, below 12 m of UZF. The 2017 snowmelt reaches it in February 2018, 0.30 m above its May low, and it
+falls 0.12 m by the end of dry water year 2018; the valley floor
 is held at land surface by the drains. Its record is the head there in a
 reference coupled run at the default parameters, written by
 `../test_mflow/tools/make_sagehen_synthetic_well.py` as a saved USGS daily-values response
@@ -37,7 +37,7 @@ serial coupler and the MODFLOW OC saving `HEAD FREQUENCY 6`, then
 
 ```bash
 make_sagehen_synthetic_well.py <run>/sagehen.hds "2016-10-01 00:00" sagehen/observations/SYNTHETIC-SAGEHEN-1_daily_values.json
-${SUMMA_ROOT}/utils/pre-processing/acquire_groundwater_level.py SYNTHETIC-SAGEHEN-1 2016-10-01 2018-09-30 \
+../acquire_groundwater_level.py SYNTHETIC-SAGEHEN-1 2016-10-01 2018-09-30 \
     sagehen/observations/SYNTHETIC-SAGEHEN-1_daily_level.nc --model-utc-offset 0 --gauge-utc-offset -8 \
     --features sagehen/observations/SYNTHETIC-SAGEHEN-1_daily_values.json
 ```
@@ -53,13 +53,15 @@ minutes a water year, UZF taking a week's drainage at a time); `grid` is `domain
 trial). The MODFLOW model is copied with a TDIS as long as the forcing. The lumped layout starts SUMMA from
 `sagehen/state_spunup_lumped.nc` and MODFLOW from `sagehen/strt_spunup_lumped.txt`, both made by
 `../test_mflow/tools/spinup_sagehen9_cycles.py`: water years 2017-2018 cycled six times from the heads of
-`spinup_sagehen9_heads.py`, carrying both models' states, with the heads extrapolated along their decay after
-the fourth. Over the last cycle soil water changed 0.6 mm and the aquifer's volume 0.6 mm. Each
+`spinup_sagehen9_heads.py`, carrying both models' states, UZF's included, with the heads extrapolated along
+their decay after the fourth. Over the last cycle soil water changed 0.4 mm and the aquifer's volume 2.2 mm.
+Every land HRU is evergreen needleleaf, and the builder sets UZF's `THTI` to carry that cover's mean
+drainage, 85 mm a year, since a run started from `strt1.txt` builds UZF from it. Each
 calibration's one-year spin-up then runs from that state rather than from `coldState.nc`. It needs
 `bin/summa_modflow6_opt_sundials_mizuroute.exe` and a python3 with netCDF4 and pyproj.
 
-At 4 x 2 on 5 ranks every trial runs from the spun-up start. The front runs from KGE 0.27 at 2.68 degC
-and 0.10 m to KGE -1.25 at 2.05 degC and 0.05 m; eight trials of a random start are a smoke test, not a
+At 4 x 2 on 5 ranks every trial runs from the spun-up start. The front runs from KGE 0.42 at 2.05 degC
+and 0.026 m to KGE 0.41 at 2.12 degC and 0.019 m; eight trials of a random start are a smoke test, not a
 calibration.
 
 ## `test_calibration_sagehen_twin.sh`

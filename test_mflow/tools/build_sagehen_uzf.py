@@ -30,7 +30,8 @@ def load(model_dir, name):
         return np.array(f.read().split(), dtype=float)
 
 
-def add_uzf(model_dir):
+def add_uzf(model_dir, rech_mean=RECH_MEAN):
+    """Write sagehen.uzf with THTI carrying rech_mean (m s-1)."""
     idomain = np.loadtxt(os.path.join(model_dir, "idomain1.txt"))
     nrow, ncol = idomain.shape
     active = idomain > 0
@@ -50,13 +51,13 @@ def add_uzf(model_dir):
                 "# The coupler overwrites SINF_PVAR (m s-1) each step with SUMMA's drainage where the water table is\n"
                 "# below the cell top, and returns REJINF to the soil column; the period FINF here is only a placeholder.\n"
                 "# THTI carries the long-term mean recharge, "
-                f"{RECH_MEAN * 3.15576e10:.0f} mm a year, at each cell's VKS.\n")
+                f"{rech_mean * 3.15576e10:.0f} mm a year, at each cell's VKS.\n")
         f.write(f"BEGIN OPTIONS\n  SAVE_FLOWS\nEND OPTIONS\n\nBEGIN DIMENSIONS\n  NUZFCELLS  {len(cells)}\n"
                 f"  NTRAILWAVES  {NTRAIL}\n  NWAVESETS  {NWAVESETS}\nEND DIMENSIONS\n\n"
                 "BEGIN PACKAGEDATA\n# iuzno lay row col landflag ivertcon surfdep vks thtr thts thti eps\n")
         for n, (i, j) in enumerate(cells, 1):
             ts = max(thts[i, j], THTR + 0.02)
-            ti = THTR + (ts - THTR) * min(RECH_MEAN / vks[i, j], 1.0) ** (1.0 / EPS)
+            ti = THTR + (ts - THTR) * min(rech_mean / vks[i, j], 1.0) ** (1.0 / EPS)
             f.write(f"  {n:4d} 1 {i + 1:3d} {j + 1:3d} 1 0 {SURFDEP} {vks[i, j]:.6e} {THTR} {ts:.4f} {ti:.4f} {EPS}\n")
         f.write("END PACKAGEDATA\n\nBEGIN PERIOD 1\n# iuzno finf pet extdp extwc ha hroot rootact\n")
         for n in range(1, len(cells) + 1):

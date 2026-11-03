@@ -27,6 +27,7 @@ import numpy as np
 from netCDF4 import Dataset
 
 import build_sagehen9 as b9
+from build_sagehen_uzf import add_uzf
 from make_sagehen_synthetic_well import ROW as WELL_ROW, COL as WELL_COL
 
 MF6_GWE = os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe")
@@ -34,6 +35,8 @@ MF6_GWE = os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe")
 # well1 is the synthetic well
 OBS_CELLS = {"well1": (WELL_ROW, WELL_COL), "well2": (9, 73), "well3": (20, 57), "well4": (51, 34), "well5": (18, 45),
              "well6": (33, 39), "well7": (62, 67), "well8": (36, 67), "well9": (42, 79), "well10": (49, 7)}
+UZF_RECHARGE = 0.085 / 3.15576e7   # m s-1, the needleleaf land's mean drainage; a restart starts UZF from it
+VEG_LAND = 1   # MODIS evergreen needleleaf on every land HRU; Sagehen is mostly mixed conifer, with shrub and meadow below
 DECISIONS = dict(b9.LATFLOW_DECISIONS, deepTherml="aquiferTemp", bcLowrTdyn="presTemp")
 
 
@@ -123,7 +126,6 @@ def main(layout, forcing_src, out_dir):
 
     with Dataset(os.path.join(src_set, "attributes.nc")) as a:
         s_type = int(np.array(a.variables["soilTypeIndex"][:]).ravel()[0])
-        v_type = int(np.array(a.variables["vegTypeIndex"][:]).ravel()[0])
         p_type = int(np.array(a.variables["slopeTypeIndex"][:]).ravel()[0])
         m_hgt = float(np.array(a.variables["mHeight"][:]).ravel()[0])
 
@@ -152,7 +154,7 @@ def main(layout, forcing_src, out_dir):
         put("aspect", "hru", cat(aspect, np.zeros(nGRU)), "f8", "degrees", "Mean azimuth of HRU, degrees East of North")
         put("slopeTypeIndex", "hru", np.full(nHRU, p_type), "i4", "-", "Index defining slope")
         put("soilTypeIndex", "hru", np.full(nHRU, s_type), "i4", "-", "Index defining soil type")
-        put("vegTypeIndex", "hru", cat(np.full(nLand, v_type), np.full(nGRU, b9.VEG_WATER)), "i4", "-",
+        put("vegTypeIndex", "hru", cat(np.full(nLand, VEG_LAND), np.full(nGRU, b9.VEG_WATER)), "i4", "-",
             "Index defining vegetation type")
         put("mHeight", "hru", np.full(nHRU, m_hgt), "f8", "m", "Measurement height above bare ground")
         d.description = f"Sagehen, 9 D8 GRUs, {layout} land HRUs, by build_sagehen9_calibration.py"
@@ -286,6 +288,7 @@ BEGIN PERIODDATA
    {nSteps * 3600.0:.1f}   {nSteps}    1.0
 END PERIODDATA
 """)
+    add_uzf(mf6, UZF_RECHARGE)
     write_obs(mf6)
     write_cnd(mf6)
     write_zone_file(os.path.join(mf6, "kh1.txt"), os.path.join(mf6, "kzone1.txt"))
