@@ -85,7 +85,7 @@ PYEOF
 write_config() {
   local dir=$1 settings=$2 algorithm=$3 samples=$4 targets=$5 pinned=$6
   mkdir -p "${dir}/output" "${dir}/state"
-  cp "${WORK}/domain/settings/SUMMA/coldState.nc" "${dir}/state/"
+  cp "${DATA}/state_spunup_lumped.nc" "${dir}/state/coldState.nc"
   local write_ts=false
   [ "${pinned}" = "yes" ] && write_ts=true
   {
@@ -297,12 +297,12 @@ def check(ok, what):
     fail |= not ok
 
 # the true parameters reproduce their own targets
-t = nc.Dataset(os.path.join(work, "truth", "output", "sagehen_calibration.nc"))
+t = nc.Dataset(os.path.join(work, "truth", "output", "sagehen_run0001_calibration.nc"))
 f0 = np.asarray(t["objective"][:], float).ravel()
 check(f0[0] > 0.9999 and f0[1] < 0.01 and f0[2] < 0.001,
       f"the true parameters reproduce the targets: KGE {f0[0]:.6f}, T RMSE {f0[1]:.2e} degC, head RMSE {f0[2]:.2e} m")
 
-d = nc.Dataset(os.path.join(work, "search", "output", "sagehen_calibration.nc"))
+d = nc.Dataset(os.path.join(work, "search", "output", "sagehen_run0001_calibration.nc"))
 obj = np.ma.filled(d["objective"][:].astype(float), np.nan).T   # (target, sample)
 failed = np.asarray(d["trial_failed"][:]) == 1
 front = (np.asarray(d["pareto_front"][:]) == 1) & ~failed

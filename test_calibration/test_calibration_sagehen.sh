@@ -58,9 +58,10 @@ echo "Building the ${LAYOUT} domain..."
 "${PYTHON}" "${MFLOW}/tools/build_sagehen9_calibration.py" \
             "${LAYOUT}" "${DATA}/forcing" "${WORK}/domain" 2>&1 | grep -v -i deprecat
 cp "${WORK}/domain/settings/SUMMA/coldState.nc" "${WORK}/state/"
-# start MODFLOW from heads spun up to a year that ends where it starts (spinup_sagehen9_heads.py)
+# start SUMMA and MODFLOW from WY2017-2018 cycled until it ends where it starts (spinup_sagehen9_cycles.py)
 if [ "${LAYOUT}" = "lumped" ]; then
   cp "${DATA}/strt_spunup_lumped.txt" "${WORK}/domain/mf6/strt1.txt"
+  cp "${DATA}/state_spunup_lumped.nc" "${WORK}/state/coldState.nc"
 fi
 echo
 
@@ -270,7 +271,7 @@ import netCDF4 as nc
 
 work, pop, ngen = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 
-d = nc.Dataset(os.path.join(work, "output", "sagehen_calibration.nc"))
+d = nc.Dataset(os.path.join(work, "output", "sagehen_run0001_calibration.nc"))
 sense = [s.strip() for s in d["objective"].sense.split(",")]
 obj = np.ma.filled(d["objective"][:].astype(float), np.nan).T   # (target, sample)
 failed = np.asarray(d["trial_failed"][:]) == 1

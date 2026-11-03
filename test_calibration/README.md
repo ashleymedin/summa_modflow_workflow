@@ -31,8 +31,9 @@ from the water-year mean, since a well's datum is not the model's. The builder's
 cell as OBS6 observation `well1`, beside nine more cells the twin experiment below scores, and the target (`variable = "modflow_obs"`, `obs_name = "well1"`) reads
 its head from the CSV MODFLOW writes in each trial's directory.
 
-To remake the record, run the lumped domain once for water years 2017-2018 from its settled
-`strt1.txt`, with the coupler and the MODFLOW OC saving `HEAD FREQUENCY 6`, then
+To remake the record, run the lumped domain once for water years 2017-2018 from the spun-up start below
+(`strt1.txt` from `strt_spunup_lumped.txt`, `initConditionFile` the `state_spunup_lumped.nc`), with the
+serial coupler and the MODFLOW OC saving `HEAD FREQUENCY 6`, then
 
 ```bash
 make_sagehen_synthetic_well.py <run>/sagehen.hds "2016-10-01 00:00" sagehen/observations/SYNTHETIC-SAGEHEN-1_daily_values.json
@@ -49,14 +50,17 @@ The domain is built at run time by `../test_mflow/tools/build_sagehen9_calibrati
 9 D8 subcatchments of `ex-gwf-sagehen-gwe`, each with a stream HRU for its reach, and the bundled basin-mean
 forcing in `sagehen/forcing/`. `lumped` gives each GRU one land HRU mapped onto all its cells (18 HRUs,
 minutes a water year, UZF taking a week's drainage at a time); `grid` is `domain_sagehen9`, one land HRU per cell (3396 HRUs, hours a
-trial). The MODFLOW model is copied with a TDIS as long as the forcing. The lumped layout starts from
-`sagehen/strt_spunup_lumped.txt`, made by `spinup_sagehen9_heads.py` (stopped at 15 years, when the head
-change over a year had a median of 0.008 m and a 95th percentile of 0.17 m, on slow ridge cells). It needs
+trial). The MODFLOW model is copied with a TDIS as long as the forcing. The lumped layout starts SUMMA from
+`sagehen/state_spunup_lumped.nc` and MODFLOW from `sagehen/strt_spunup_lumped.txt`, both made by
+`../test_mflow/tools/spinup_sagehen9_cycles.py`: water years 2017-2018 cycled six times from the heads of
+`spinup_sagehen9_heads.py`, carrying both models' states, with the heads extrapolated along their decay after
+the fourth. Over the last cycle soil water changed 0.6 mm and the aquifer's volume 0.6 mm. Each
+calibration's one-year spin-up then runs from that state rather than from `coldState.nc`. It needs
 `bin/summa_modflow6_opt_sundials_mizuroute.exe` and a python3 with netCDF4 and pyproj.
 
-At 4 x 2 on 5 ranks every trial runs, in about 2 hours beside a twin run on the same machine. The front
-runs from KGE -0.86 at 2.64 degC and 0.18 m to KGE -1.59 at 2.09 degC and 0.29 m; eight trials of a
-random start are a smoke test, not a calibration.
+At 4 x 2 on 5 ranks every trial runs from the spun-up start. The front runs from KGE 0.27 at 2.68 degC
+and 0.10 m to KGE -1.25 at 2.05 degC and 0.05 m; eight trials of a random start are a smoke test, not a
+calibration.
 
 ## `test_calibration_sagehen_twin.sh`
 
@@ -88,7 +92,8 @@ with Sy and streambed K wrong.
 ./test_calibration_sagehen_twin.sh [population] [generations] [n_ranks]   # defaults: 20, 15, 10
 ```
 
-With the five parameters above and 15 generations it passes: 300 trials in about 21 hours of computing,
+From the cold start it used before the spun-up state (13 October 2026), with the five parameters above and
+15 generations, it passes: 300 trials in about 21 hours of computing,
 none failed. The balanced member (KGE 0.964, 0.23 degC, 0.039 m) has K within 4.0% of its range, Sy 9.6%,
 streambed K 3.1%, `k_soil` 0.2% and `k_macropore` 0.0%. Discharge and temperature alone are fooled by Sy
 and streambed K: the best-temperature and best-KGE trials have them 20-64% off, and the heads pin them.
