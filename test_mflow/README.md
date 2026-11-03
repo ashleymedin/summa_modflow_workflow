@@ -1,7 +1,7 @@
 # SUMMA / MODFLOW 6 coupled test cases
 
 A thin BMI coupler runs SUMMA as the land model and MODFLOW 6 as the groundwater model.
-This folder holds the coupler driver script, two MODFLOW 6 models, and eleven cases.
+This folder holds the coupler driver script, the MODFLOW 6 models, and fourteen cases.
 
 ## Cases
 
@@ -15,6 +15,8 @@ This folder holds the coupler driver script, two MODFLOW 6 models, and eleven ca
 | `./run_sagehen9.sh` | `domain_sagehen9` | 3396 | `modLatflow` | one HRU per MODFLOW cell in 9 GRUs; HRU area equals cell area, so there is no aggregation or area error left to correct |
 | `./run_sagehen9_noLatflow.sh` | `domain_sagehen9` | 3396 | `modflow` | the same 3396 HRUs without lateral flow |
 | `./run_sagehen9_mizuroute.sh` | `domain_sagehen9` | 3396 | `modLatflow` | `run_sagehen9.sh` with the 9 reaches routed by mizuRoute; needs a build with both couplers |
+| `./run_sagehen9_sfr.sh` | `domain_sagehen9` | 3396 | `modLatflow` | `run_sagehen9.sh` with SFR in place of CHD; see `domain_sagehen9/README.md` |
+| `./run_sagehen9_gwe.sh` | `domain_sagehen9` | 3396 | `modLatflow` | `run_sagehen9_sfr.sh` plus a GWE model setting SUMMA's aquifer temperature |
 | `./run_sagehen9_wel.sh` | `domain_sagehen9` | 3396 | `modflow` | `run_sagehen9_noLatflow.sh` with one pumping well; `tools/check_sagehen_wel.py` shows its drawdown reach `lowerBoundHead` |
 | `./run_sagehen9_deeproot.sh` | `domain_sagehen9` | 3396 | `modflow` | `run_sagehen1_deeproot.sh`'s EVT mechanism over one HRU per cell |
 | `./run_sagehen1_wet.sh` | `domain_sagehen1` | 1 | `modflow` | the lumped half of `run_sagehen9_noLatflow.sh`: same event, decisions and MODFLOW model |
