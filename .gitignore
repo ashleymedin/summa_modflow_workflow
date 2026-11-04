@@ -16,3 +16,14 @@ test_calibration/*.log
 
 __pycache__/
 .DS_Store
+
+# rebuilt by tools/build_sagehen_bands.py
+test_mflow/domain_sagehen_bands/
+test_mflow/domain_sagehen_lumped/
+test_mflow/domain_sagehen_hybrid/
+test_mflow/ex-gwf-sagehen-bands/
+test_mflow/ex-gwf-sagehen-lumped/
+test_mflow/ex-gwf-sagehen-hybrid/
+test_mflow/run_sagehen_bands_*.sh
+test_mflow/run_sagehen_lumped_*.sh
+test_mflow/run_sagehen_hybrid_*.sh
