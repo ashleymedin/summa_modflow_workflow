@@ -8,6 +8,8 @@ builds from the files here.
 - [`test_mflow/`](test_mflow/README.md) -- the coupled cases: Sagehen from 1 to 3396 HRUs (lateral flow,
   a steady-state stress period, groundwater ET, a pumping well, SFR, GWE, mizuRoute routing), Little River,
   the MODFLOW models, and the tools that build them.
+- [`hpc/fir/`](hpc/fir/README.md) -- the Sagehen calibration on the Alliance Fir cluster: build, timing and
+  SLURM scripts, with run directories prepared on your own machine.
 - [`test_calibration/`](test_calibration/README.md) -- the Sagehen calibration (discharge, stream
   temperature, a synthetic well) and the twin experiment, with their forcing and observations, and the
   Little River well and gauge records.

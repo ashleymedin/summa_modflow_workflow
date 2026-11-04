@@ -27,3 +27,6 @@ test_mflow/ex-gwf-sagehen-hybrid/
 test_mflow/run_sagehen_bands_*.sh
 test_mflow/run_sagehen_lumped_*.sh
 test_mflow/run_sagehen_hybrid_*.sh
+
+# run directories made for an HPC
+hpc/*/runs/
