@@ -78,14 +78,19 @@ sbatch --nodes=4 --ntasks=121 --cpus-per-task=5 $WORKFLOW/hpc/fir/sagehen_calib.
 Output, including `run.log` and the calibration file `output/sagehen_run0001_calibration.nc`, stays in
 `$RUNS/<run>`.
 
-## Not yet in SUMMA
+## Seeding the grid from the pre-calibration
 
-- **GRU threads.** `USE_OPENMP` and checks that a trial gives the same answer on 1 and many threads are
-  being added to SUMMA. Until then `--cpus-per-task` above 1 only idles cores.
-- **One calibration across nodes.** SUMMA keeps a calibration's ranks on one node, so the 4-node line runs
-  on the first node only until that changes.
-- **Seeding the grid from the pre-calibration.** NSGA-II cannot yet start from an earlier calibration's
-  final population. Until it can, the grid search starts from a random population, and the lumped front
-  can only narrow the parameter ranges: SUMMA's bounds in the run's `domain/settings/SUMMA/localParamInfo.txt`
-  and `basinParamInfo.txt`, MODFLOW's in the `lower`/`upper` of `config.toml`.
+To start the grid search from the lumped search's final population, add to `[calibration.nsga2]` in the
+grid run's `config.toml`, with `$RUNS` written out:
+
+```toml
+seed_file = "$RUNS/lumped_p120/output/sagehen_run0001_calibration.nc"
+seed_fraction = 0.5
+```
+
+The best half of the grid's first generation comes from that file and the rest is random. The run stops if
+a calibrated parameter is missing from the file or lies outside the grid run's bounds.
+
+## Not in SUMMA
+
 - **No restart.** A calibration cannot resume, so give `--time` room: Fir allows 7 days.

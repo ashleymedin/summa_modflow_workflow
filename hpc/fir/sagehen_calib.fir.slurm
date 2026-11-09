@@ -14,8 +14,7 @@
 #
 #   sbatch sagehen_calib.fir.slurm <run>                                          # pop 120, one core a trial
 #   sbatch --ntasks=13 --cpus-per-task=5 sagehen_calib.fir.slurm <run>            # pop 12, 5 threads a trial
-#   sbatch --nodes=4 --ntasks=121 --cpus-per-task=5 sagehen_calib.fir.slurm <run> # pop 120 over 4 nodes:
-#       needs SUMMA to let one calibration span nodes; until then it stays on the first node.
+#   sbatch --nodes=4 --ntasks=121 --cpus-per-task=5 sagehen_calib.fir.slurm <run> # pop 120 over 4 nodes
 set -euo pipefail
 
 RUN=${1:?"usage: sbatch sagehen_calib.fir.slurm <run name>"}
