@@ -90,30 +90,29 @@ end_date   = "2018-09-30"
 
 n_samples = ${n_samples}
 
-param_list = [
-    "k_soil",
-    "theta_sat",
-    "qSurfScale",
-    "summerLAI",
-    "frozenPrecipMultip",
-    "Fcapil",
-    "tempCritRain",
-    "heightCanopyTop",
-    "heightCanopyBottom",
-    "windReductionParam",
-    "vGn_n",
-    "routingGammaScale",
-    "routingGammaShape"
-]
-
 write_aligned = false
 
 
-[calibration.parameter_transformations]
+[calibration.parameters]
 
-k_soil            = "log"
-routingGammaScale = "log"
-K_mult            = "log"
+# every member of an ordered chain is listed, so it is searched
+k_soil             = { transformation = "log" }
+theta_sat          = {}
+qSurfScale         = {}
+summerLAI          = {}
+frozenPrecipMultip = {}
+Fcapil             = {}
+tempCritRain       = {}
+heightCanopyTop    = {}
+heightCanopyBottom = {}
+windReductionParam = {}
+vGn_n              = {}
+routingGammaScale  = { transformation = "log" }
+routingGammaShape  = {}
+theta_res          = {}
+critSoilWilting    = {}
+critSoilTranspire  = {}
+fieldCapacity      = {}
 
 
 [[parameter_dependencies.ordered]]
@@ -125,7 +124,6 @@ gap_fraction = 0.25
 
 parameters   = ["theta_res", "critSoilWilting", "critSoilTranspire", "fieldCapacity", "theta_sat"]
 gap_fraction = 0.025
-sample_gaps  = true
 
 
 # MODFLOW parameters: multipliers on the input files of [modflow] run_dir, rewritten for each trial;
@@ -136,6 +134,7 @@ name  = "K_mult"
 files = ["kh1.txt", "kv1.txt"]
 lower = 0.2
 upper = 5.0
+transformation = "log"
 
 [[calibration.modflow_parameter]]
 
@@ -143,6 +142,8 @@ name  = "Sy_mult"
 files = "sy1.txt"
 lower = 0.5
 upper = 1.5
+
+
 [calibration.nsga2]
 
 population_size = ${population}
@@ -153,7 +154,8 @@ population_size = ${population}
 
 name      = "discharge"
 variable  = "streamflow"
-reach     = 9
+spatial_unit = "reach"
+spatial_id   = 9
 obs_path  = "${obs}/"
 obs_file  = "USGS_10343500_daily_flow.nc"
 vname_obs = "q_obs"
@@ -165,7 +167,8 @@ metric    = "kge"
 
 name      = "stream_temperature"
 variable  = "T_reach"
-reach     = 9
+spatial_unit = "reach"
+spatial_id   = 9
 obs_path  = "${obs}/"
 obs_file  = "USGS_10343500_daily_temperature.nc"
 vname_obs = "t_obs"

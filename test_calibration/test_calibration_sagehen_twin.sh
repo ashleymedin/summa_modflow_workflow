@@ -176,15 +176,13 @@ end_date   = "2018-09-30"
 
 n_samples = ${samples}
 
-param_list = ["k_soil", "k_macropore"]
-
 write_aligned = false
 
 
-[calibration.parameter_transformations]
+[calibration.parameters]
 
 EOF
-  echo "${PARAMS}" | awk '$5 == "log" {printf "%-13s = \"log\"\n", $1}'
+  echo "${PARAMS}" | awk '$1 == "k_soil" || $1 == "k_macropore" {printf "%-11s = { transformation = \"%s\" }\n", $1, ($5 == "log") ? "log" : "none"}'
   echo
   echo "${PARAMS}" | awk -v pinned="${pinned}" '
     $1 == "k_soil" || $1 == "k_macropore" {next}
@@ -193,7 +191,7 @@ EOF
       if ($1 == "K_mult")       files = "files = [\"kh1.txt\", \"kv1.txt\"]"
       if ($1 == "Sy_mult")      files = "files = \"sy1.txt\""
       if ($1 == "rhk_mult")     files = "files = \"sagehen.sfr\"\nblock = \"PACKAGEDATA\"\ncolumn = 10"
-      printf "[[calibration.modflow_parameter]]\n\nname = \"%s\"\n%s\nlower = %s\nupper = %s\n\n", $1, files, lo, hi
+      printf "[[calibration.modflow_parameter]]\n\nname = \"%s\"\n%s\nlower = %s\nupper = %s\ntransformation = \"%s\"\n\n", $1, files, lo, hi, ($5 == "log") ? "log" : "none"
     }'
   [ "${algorithm}" = "nsga2" ] && printf "[calibration.nsga2]\n\npopulation_size = %s\n\n" "${POPULATION}"
   cat "${targets}"
@@ -223,7 +221,8 @@ cat > "${WORK}/twin_targets.toml" <<EOF
 
 name      = "discharge"
 variable  = "streamflow"
-reach     = 9
+spatial_unit = "reach"
+spatial_id   = 9
 obs_path  = "$(dirname "${TWIN_OBS}")/"
 obs_file  = "$(basename "${TWIN_OBS}")"
 vname_obs = "q_obs"
@@ -233,7 +232,8 @@ metric    = "kge"
 
 name      = "stream_temperature"
 variable  = "T_reach"
-reach     = 9
+spatial_unit = "reach"
+spatial_id   = 9
 obs_path  = "$(dirname "${TWIN_OBS}")/"
 obs_file  = "$(basename "${TWIN_OBS}")"
 vname_obs = "t_obs"
@@ -255,7 +255,8 @@ cat > "${WORK}/gauge_target.toml" <<EOF
 
 name      = "discharge"
 variable  = "streamflow"
-reach     = 9
+spatial_unit = "reach"
+spatial_id   = 9
 obs_path  = "${DATA}/observations/"
 obs_file  = "USGS_10343500_daily_flow.nc"
 vname_obs = "q_obs"
