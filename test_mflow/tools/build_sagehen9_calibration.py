@@ -8,6 +8,7 @@ Two layouts of the same GRUs, stream HRUs, reaches and MODFLOW model:
            the GRU with equal weight (9 land HRUs)
 
 The forcing is a directory of single-HRU basin-mean monthly files, tiled to every HRU.
+Each land HRU takes the dominant vegetation and soil class of its cells (build_sagehen_landcover.py).
 The MODFLOW model is ex-gwf-sagehen-gwe (SFR streams, GWE heat transport), copied with a TDIS long
 enough for the forcing, saving heads, temperatures and budgets at its last step only, and an OBS6
 file writing the head at each observation cell every step.  GWE's water-table temperature is the
@@ -35,8 +36,8 @@ MF6_GWE = os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe")
 # well1 is the synthetic well
 OBS_CELLS = {"well1": (WELL_ROW, WELL_COL), "well2": (9, 73), "well3": (20, 57), "well4": (51, 34), "well5": (18, 45),
              "well6": (33, 39), "well7": (62, 67), "well8": (36, 67), "well9": (42, 79), "well10": (49, 7)}
-UZF_RECHARGE = 0.085 / 3.15576e7   # m s-1, the needleleaf land's mean drainage; a restart starts UZF from it
-VEG_LAND = 1   # MODIS evergreen needleleaf on every land HRU; Sagehen is mostly mixed conifer, with shrub and meadow below
+UZF_RECHARGE = 0.049 / 3.15576e7   # m s-1, the land's mean drainage over the spin-up; a restart starts UZF from it
+LANDCOVER = os.path.join(os.path.dirname(b9.MF6), "landcover")
 DECISIONS = dict(b9.LATFLOW_DECISIONS, deepTherml="aquiferTemp", bcLowrTdyn="presTemp")
 
 
@@ -97,6 +98,9 @@ def main(layout, forcing_src, out_dir):
         members = [[k] for k in range(nGRU)]
     tan_slope, aspect, lon, lat = geom.T
     nLand = len(land_id)
+    hru_cells = [[c] for c in cells] if layout == "grid" else gcells
+    veg_land, soil_land = (dominant_class(np.loadtxt(os.path.join(LANDCOVER, f)), hru_cells)
+                           for f in ("veg1.txt", "soil1.txt"))
 
     # SUMMA indexes HRUs GRU by GRU, each GRU's stream HRU last; the map is keyed by that index
     land_slot, stream_slot, p = [], [], 0
@@ -125,7 +129,7 @@ def main(layout, forcing_src, out_dir):
     src_set = os.path.join(b9.SRC, "settings", "SUMMA")
 
     with Dataset(os.path.join(src_set, "attributes.nc")) as a:
-        s_type = int(np.array(a.variables["soilTypeIndex"][:]).ravel()[0])
+        s_type = int(np.array(a.variables["soilTypeIndex"][:]).ravel()[0])   # the stream HRUs'
         p_type = int(np.array(a.variables["slopeTypeIndex"][:]).ravel()[0])
         m_hgt = float(np.array(a.variables["mHeight"][:]).ravel()[0])
 
@@ -153,8 +157,8 @@ def main(layout, forcing_src, out_dir):
         put("contourLength", "hru", cat(contour, length), "f8", "m", "Contour length of HRU")
         put("aspect", "hru", cat(aspect, np.zeros(nGRU)), "f8", "degrees", "Mean azimuth of HRU, degrees East of North")
         put("slopeTypeIndex", "hru", np.full(nHRU, p_type), "i4", "-", "Index defining slope")
-        put("soilTypeIndex", "hru", np.full(nHRU, s_type), "i4", "-", "Index defining soil type")
-        put("vegTypeIndex", "hru", cat(np.full(nLand, VEG_LAND), np.full(nGRU, b9.VEG_WATER)), "i4", "-",
+        put("soilTypeIndex", "hru", cat(soil_land, np.full(nGRU, s_type)), "i4", "-", "Index defining soil type")
+        put("vegTypeIndex", "hru", cat(veg_land, np.full(nGRU, b9.VEG_WATER)), "i4", "-",
             "Index defining vegetation type")
         put("mHeight", "hru", np.full(nHRU, m_hgt), "f8", "m", "Measurement height above bare ground")
         d.description = f"Sagehen, 9 D8 GRUs, {layout} land HRUs, by build_sagehen9_calibration.py"
@@ -170,6 +174,15 @@ def main(layout, forcing_src, out_dir):
     write_modflow(out_dir, nSteps, layout)
 
     print(f"{layout}: {nLand} land HRUs + {nGRU} stream HRUs in {nGRU} GRUs, {nSteps} forcing steps")
+
+
+def dominant_class(classes, hru_cells):
+    """The most common class over each HRU's cells."""
+    out = []
+    for cs in hru_cells:
+        u, c = np.unique([classes[cell] for cell in cs], return_counts=True)
+        out.append(int(u[np.argmax(c)]))
+    return np.array(out)
 
 
 def write_forcing(settings, forcing, forcing_src, ids, lon, lat):

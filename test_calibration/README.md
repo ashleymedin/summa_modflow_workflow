@@ -52,11 +52,14 @@ forcing in `sagehen/forcing/`. `lumped` gives each GRU one land HRU mapped onto 
 minutes a water year, UZF taking a week's drainage at a time); `grid` is `domain_sagehen9`, one land HRU per cell (3396 HRUs, hours a
 trial). The MODFLOW model is copied with a TDIS as long as the forcing. The lumped layout starts SUMMA from
 `sagehen/state_spunup_lumped.nc` and MODFLOW from `sagehen/strt_spunup_lumped.txt`, both made by
-`../test_mflow/tools/spinup_sagehen9_cycles.py`: water years 2017-2018 cycled six times from the heads of
-`spinup_sagehen9_heads.py`, carrying both models' states, UZF's included, with the heads extrapolated along
-their decay after the fourth. Over the last cycle soil water changed 0.4 mm and the aquifer's volume 2.2 mm.
-Every land HRU is evergreen needleleaf, and the builder sets UZF's `THTI` to carry that cover's mean
-drainage, 85 mm a year, since a run started from `strt1.txt` builds UZF from it. Each
+`../test_mflow/tools/spinup_sagehen9_cycles.py`: water years 2017-2018 cycled sixteen times (two runs of
+eight) from the heads of `spinup_sagehen9_heads.py`, carrying both models' states, UZF's included, with the
+heads extrapolated along their decay after the fourth of each. It has not quite settled: over the last cycle
+soil water changed 0.6 mm and the aquifer's volume -43 mm, under 3% of the cycle's streamflow and still shrinking.
+Each land HRU takes its GRU's most common vegetation and soil class from `../test_mflow/landcover/`
+(`build_sagehen_landcover.py`: NLCD 2021 split by tree canopy cover, and POLARIS 0-2 m texture), which makes
+the land woody savanna on loam or sandy loam. The builder sets UZF's `THTI` to carry the land's mean
+drainage over the spin-up, 49 mm a year, since a run started from `strt1.txt` builds UZF from it. Each
 calibration's one-year spin-up then runs from that state rather than from `coldState.nc`. It needs
 `bin/summa_modflow6_opt_sundials_mizuroute.exe` and a python3 with netCDF4 and pyproj.
 
