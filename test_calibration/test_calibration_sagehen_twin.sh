@@ -113,6 +113,7 @@ time_zone  = "utcTime"
 use_mizuroute    = true
 use_modflow      = true
 write_timeseries = ${write_ts}
+stream_temp      = true   # the reference writes the temperature target it is not scored on
 
 work_path = "${dir}/output"
 
