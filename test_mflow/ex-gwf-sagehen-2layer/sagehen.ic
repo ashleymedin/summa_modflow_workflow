@@ -1,0 +1,9 @@
+# Initial conditions: both layers start from strt1.txt (m).
+BEGIN OPTIONS
+END OPTIONS
+
+BEGIN GRIDDATA
+  STRT LAYERED
+    OPEN/CLOSE  strt1.txt
+    OPEN/CLOSE  strt1.txt
+END GRIDDATA

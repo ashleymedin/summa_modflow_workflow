@@ -1,0 +1,30 @@
+# Iterative model solution.  Steep unconfined terrain solved with Newton
+# (NEWTON UNDER_RELAXATION is set in sagehen.nam).  DBD under-relaxation +
+# backtracking on the outer loop keeps the water table stable as SUMMA
+# recharge switches on and off between coupling steps.
+BEGIN OPTIONS
+  PRINT_OPTION  SUMMARY
+END OPTIONS
+
+BEGIN NONLINEAR
+  OUTER_DVCLOSE            1.0e-4
+  OUTER_MAXIMUM            200
+  UNDER_RELAXATION         DBD
+  UNDER_RELAXATION_THETA   0.7
+  UNDER_RELAXATION_KAPPA   0.1
+  UNDER_RELAXATION_GAMMA   0.0
+  UNDER_RELAXATION_MOMENTUM 0.0
+  BACKTRACKING_NUMBER      20
+  BACKTRACKING_TOLERANCE   1.05
+  BACKTRACKING_REDUCTION_FACTOR 0.2
+  BACKTRACKING_RESIDUAL_LIMIT   1.0
+END NONLINEAR
+
+BEGIN LINEAR
+  INNER_MAXIMUM        100
+  INNER_DVCLOSE        1.0e-6
+  INNER_RCLOSE         1.0e-3
+  LINEAR_ACCELERATION  BICGSTAB
+  RELAXATION_FACTOR    0.0
+  PRECONDITIONER_LEVELS 0
+END LINEAR

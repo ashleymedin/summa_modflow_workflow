@@ -1,0 +1,15 @@
+# Node property flow: GSFLOW's UPW conductivities in m/day (kh.txt, kv.txt), converted to m/s.
+# Layer 1 convertible, layer 2 confined, as GSFLOW's LAYTYP.
+BEGIN OPTIONS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN GRIDDATA
+  ICELLTYPE LAYERED
+    CONSTANT  1
+    CONSTANT  0
+  K
+    OPEN/CLOSE  kh.txt  FACTOR  1.15740740740741e-05
+  K33
+    OPEN/CLOSE  kv.txt  FACTOR  1.15740740740741e-05
+END GRIDDATA

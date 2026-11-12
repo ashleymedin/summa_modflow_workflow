@@ -1,0 +1,19 @@
+# Storage: GSFLOW's UPW specific yield (sy.txt, layer 1 only) and specific storage.
+BEGIN OPTIONS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN GRIDDATA
+  ICONVERT LAYERED
+    CONSTANT  1
+    CONSTANT  0
+  SS LAYERED
+    CONSTANT  2e-06
+    CONSTANT  2e-06
+  SY
+    OPEN/CLOSE  sy.txt
+END GRIDDATA
+
+BEGIN PERIOD 1
+  TRANSIENT
+END PERIOD

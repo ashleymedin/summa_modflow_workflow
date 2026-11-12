@@ -1,7 +1,7 @@
 # SUMMA / MODFLOW 6 coupled test cases
 
 A thin BMI coupler runs SUMMA as the land model and MODFLOW 6 as the groundwater model.
-This folder holds the coupler driver script, the MODFLOW 6 models, and fourteen cases.
+This folder holds the coupler driver script, the MODFLOW 6 models, and fifteen cases.
 
 ## Cases
 
@@ -21,6 +21,7 @@ This folder holds the coupler driver script, the MODFLOW 6 models, and fourteen 
 | `./run_sagehen9_deeproot.sh` | `domain_sagehen9` | 3396 | `modflow` | `run_sagehen1_deeproot.sh`'s EVT mechanism over one HRU per cell |
 | `./run_sagehen1_wet.sh` | `domain_sagehen1` | 1 | `modflow` | the lumped half of `run_sagehen9_noLatflow.sh`: same event, decisions and MODFLOW model |
 | `./run_sagehen1_wet_deeproot.sh` | `domain_sagehen1` | 1 | `modflow` | the lumped half of `run_sagehen9_deeproot.sh` |
+| `./run_sagehen1_2layer.sh` | `domain_sagehen1` | 1 | `modflow` | `run_sagehen1.sh` on GSFLOW's two-layer aquifer, for a same-aquifer comparison with GSFLOW |
 
 `domain_sagehen4` carries two file managers, `fileManager_latflow.txt` and
 `fileManager_noLatflow.txt`, whose decision files differ on the `groundwatr` line alone, so
@@ -29,7 +30,9 @@ running the pair isolates what lateral flow contributes. They write `run1_latflo
 
 `run_sagehen1_steady.sh` and the three deeproot cases use `ex-gwf-sagehen-ss`, which adds a
 steady-state first stress period and an EVT package; the rest share the MODFLOW 6 model
-in `ex-gwf-sagehen`. Both carry a DRN at land surface, returned to SUMMA as surface runoff, so
+in `ex-gwf-sagehen`. `run_sagehen1_2layer.sh` uses `ex-gwf-sagehen-2layer`, which
+`tools/build_sagehen_2layer.py` writes from `ex-gwf-sagehen` and GSFLOW's two layer bottoms, K, Sy and Ss
+(the GSFLOW Sagehen MODFLOW-NWT input, `sagehen-orig/input/modflow`). All of them carry a DRN at land surface, returned to SUMMA as surface runoff, so
 the water table cannot rise above the ground over a spin-up. All of them run the same 72 hourly steps. Each case carries its own
 `summa_modflow6.config`, so they can differ in package names, roles, HRU→cell map and feedback.
 

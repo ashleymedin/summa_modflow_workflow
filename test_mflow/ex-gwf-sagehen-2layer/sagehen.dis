@@ -1,0 +1,25 @@
+# Structured discretisation: 2 layers, 73 rows, 81 cols, 90 m cells.
+# TOP and IDOMAIN are ex-gwf-sagehen's; BOTM is GSFLOW's two layer bottoms (bot.txt, build_sagehen_2layer.py).
+BEGIN OPTIONS
+  LENGTH_UNITS  METERS
+END OPTIONS
+
+BEGIN DIMENSIONS
+  NLAY  2
+  NROW  73
+  NCOL  81
+END DIMENSIONS
+
+BEGIN GRIDDATA
+  DELR
+    CONSTANT  90.0
+  DELC
+    CONSTANT  90.0
+  TOP
+    OPEN/CLOSE  top1.txt
+  BOTM
+    OPEN/CLOSE  bot.txt
+  IDOMAIN LAYERED
+    OPEN/CLOSE  idomain1.txt
+    OPEN/CLOSE  idomain1.txt
+END GRIDDATA

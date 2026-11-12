@@ -1,0 +1,12 @@
+# Constant-head cells - the three outlet cells that carry ibnd1.txt == -1,
+# held at their strt1.txt value (see chd1.txt: layer row col head).
+BEGIN OPTIONS
+END OPTIONS
+
+BEGIN DIMENSIONS
+  MAXBOUND  3
+END DIMENSIONS
+
+BEGIN PERIOD 1
+  OPEN/CLOSE  chd1.txt
+END PERIOD
