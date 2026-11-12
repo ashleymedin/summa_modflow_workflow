@@ -91,8 +91,12 @@ from 0.04 to 0.85 m, so it takes a member that fits discharge and temperature an
 with Sy and streambed K wrong.
 
 ```bash
-./test_calibration_sagehen_twin.sh [population] [generations] [n_ranks]   # defaults: 20, 15, 10
+./test_calibration_sagehen_twin.sh [population] [generations] [n_ranks] [heads|lowflow]   # defaults: 20, 15, 10, heads
 ```
+
+`lowflow` replaces the heads with GSFLOW-style low-flow targets, the KGE of log discharge over the lowest 30%
+of each flow-duration curve, to ask how far a calibration without wells pins the aquifer. It runs in
+`sagehen_twin_lowflow_run`.
 
 From the cold start it used before the spun-up state (13 October 2026), with the five parameters above and
 15 generations, it passes: 300 trials in about 21 hours of computing,

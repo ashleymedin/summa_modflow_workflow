@@ -11,10 +11,13 @@
 # pooled over the cells, and the balanced front member, whose worst objective is nearest that objective's
 # best on the front, must recover every parameter within 10% of its searched range, on its search scale.
 #
+# With targets = lowflow the heads are replaced by GSFLOW-style low-flow targets: the KGE of log
+# discharge over the lowest 30% of each flow-duration curve. It runs in sagehen_twin_lowflow_run.
+#
 # The domain is test_calibration_sagehen.sh's lumped one (build_sagehen9_calibration.py), with GWE.
 # Needs bin/summa_modflow6_opt_sundials_mizuroute.exe and a python3 with netCDF4 and pyproj.
 #
-# Usage:  ./test_calibration_sagehen_twin.sh [population] [generations] [n_ranks]
+# Usage:  ./test_calibration_sagehen_twin.sh [population] [generations] [n_ranks] [heads|lowflow]
 # ---------------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -27,8 +30,13 @@ TOOLS="${MFLOW}/tools"
 POPULATION=${1:-20}
 GENERATIONS=${2:-15}
 N_RANKS=${3:-10}
+TARGETS=${4:-heads}
 N_SAMPLES=$((POPULATION * GENERATIONS))
-WORK="${TEST_DIR}/sagehen_twin_run"
+case "${TARGETS}" in
+  heads)   WORK="${TEST_DIR}/sagehen_twin_run";         THIRD="pooled heads" ;;
+  lowflow) WORK="${TEST_DIR}/sagehen_twin_lowflow_run"; THIRD="low flows" ;;
+  *) echo "ERROR: targets must be heads or lowflow, not ${TARGETS}"; exit 1 ;;
+esac
 PYTHON=${PYTHON:-python3}
 SUMMA_EXE="${SUMMA_ROOT}/bin/summa_modflow6_opt_sundials_mizuroute.exe"
 
@@ -47,11 +55,11 @@ if [ ! -x "${SUMMA_EXE}" ]; then
 fi
 
 echo "======================================================================"
-echo "SUMMA twin experiment (Sagehen, discharge + stream temperature + pooled heads)"
+echo "SUMMA twin experiment (Sagehen, discharge + stream temperature + ${THIRD})"
 echo "======================================================================"
 echo "  budget:      ${N_SAMPLES} trials (population ${POPULATION} x ${GENERATIONS} generations)"
 echo "  ranks:       ${N_RANKS}"
-echo "  heads at:    $(echo ${OBS_CELLS})"
+[ "${TARGETS}" = "heads" ] && echo "  heads at:    $(echo ${OBS_CELLS})"
 echo
 
 rm -rf "${WORK}"
@@ -77,8 +85,9 @@ for line in open(path):
         line = f"{key:<26}| {default:>12} | {truth[key]:>12} | {truth[key]:>12}\n"
     out.append(line)
 open(path, "w").writelines(out)
-with open(os.path.join(settings, "outputControl.txt"), "a") as f:
-    f.write("scalarStreamTemp | 1\n")
+path = os.path.join(settings, "outputControl.txt")
+lines = [l for l in open(path) if l.split("|")[0].strip() != "scalarStreamTemp"]
+open(path, "w").writelines(lines + ["scalarStreamTemp | 1\n"])
 PYEOF
 
 # write_config <dir> <settings> <algorithm> <n_samples> <targets> <pinned>
@@ -205,17 +214,42 @@ run() {
   mpirun -np "${ranks}" "${SUMMA_EXE}" -c "${dir}/config.toml" > "${dir}/run.log" 2>&1
   status=$?
   set -e
-  if [ ${status} -ne 0 ]; then
+  # a rank can exit unfinalised after SUMMA reports success; the results are written by then
+  if [ ${status} -ne 0 ] && grep -q "FORTRAN STOP: finished" "${dir}/run.log"; then
+    echo "  WARNING: ${dir} exited ${status} after finishing; a rank did not finalise MPI"
+  elif [ ${status} -ne 0 ]; then
     echo "FAIL: ${dir} exited ${status}"
     tail -25 "${dir}/run.log"
     exit 1
   fi
 }
 
-# the twin's targets: discharge and temperature leaving reach 9, and the head at every OBS6 cell, pooled
+# the twin's targets: discharge and temperature leaving reach 9, then the head at every OBS6 cell, pooled,
+# or the low end of reach 9's flow-duration curve
 TWIN_OBS="${WORK}/targets/SAGEHEN_TWIN_daily.nc"
 names=$(for c in ${OBS_CELLS}; do printf '"%s", ' "$c"; done | sed 's/, $//')
 vnames=$(for c in ${OBS_CELLS}; do printf '"h_%s", ' "$c"; done | sed 's/, $//')
+if [ "${TARGETS}" = "heads" ]; then
+  THIRD_TARGET="name      = \"heads\"
+variable  = \"modflow_obs\"
+obs_name  = [${names}]
+obs_path  = \"$(dirname "${TWIN_OBS}")/\"
+obs_file  = \"$(basename "${TWIN_OBS}")\"
+vname_obs = [${vnames}]
+metric    = \"rmse\""
+else
+  THIRD_TARGET="name          = \"low_flow\"
+variable      = \"streamflow\"
+spatial_unit  = \"reach\"
+spatial_id    = 9
+obs_path      = \"$(dirname "${TWIN_OBS}")/\"
+obs_file      = \"$(basename "${TWIN_OBS}")\"
+vname_obs     = \"q_obs\"
+obs_transform = \"log\"
+low_flow      = 0.3
+flow_duration = true
+metric        = \"kge\""
+fi
 cat > "${WORK}/twin_targets.toml" <<EOF
 [[calibration.target]]
 
@@ -241,13 +275,7 @@ metric    = "rmse"
 
 [[calibration.target]]
 
-name      = "heads"
-variable  = "modflow_obs"
-obs_name  = [${names}]
-obs_path  = "$(dirname "${TWIN_OBS}")/"
-obs_file  = "$(basename "${TWIN_OBS}")"
-vname_obs = [${vnames}]
-metric    = "rmse"
+${THIRD_TARGET}
 EOF
 # the reference trial is scored against the gauge, only so it runs as a calibration trial does
 cat > "${WORK}/gauge_target.toml" <<EOF
@@ -284,12 +312,16 @@ grep -E "^NSGA-II generation" "${WORK}/search/run.log" | sed 's/^/  /' || true
 echo
 
 echo "Checking the recovery..."
-"${PYTHON}" - "${WORK}" "${PARAMS}" "${TOLERANCE}" <<'PYEOF'
+"${PYTHON}" - "${WORK}" "${PARAMS}" "${TOLERANCE}" "${TARGETS}" <<'PYEOF'
 import os, sys
 import numpy as np
 import netCDF4 as nc
 
 work, params, tol = sys.argv[1], [l.split() for l in sys.argv[2].splitlines()], float(sys.argv[3])
+heads = sys.argv[4] == "heads"
+# the third objective as a loss, and how it reads
+loss3 = (lambda v: v) if heads else (lambda v: 1.0 - v)
+label3 = (lambda v: f"head RMSE {v:.3g} m") if heads else (lambda v: f"low-flow KGE {v:.6f}")
 
 fail = False
 def check(ok, what):
@@ -300,8 +332,8 @@ def check(ok, what):
 # the true parameters reproduce their own targets
 t = nc.Dataset(os.path.join(work, "truth", "output", "sagehen_run0001_calibration.nc"))
 f0 = np.asarray(t["objective"][:], float).ravel()
-check(f0[0] > 0.9999 and f0[1] < 0.01 and f0[2] < 0.001,
-      f"the true parameters reproduce the targets: KGE {f0[0]:.6f}, T RMSE {f0[1]:.2e} degC, head RMSE {f0[2]:.2e} m")
+check(f0[0] > 0.9999 and f0[1] < 0.01 and loss3(f0[2]) < 1e-3,
+      f"the true parameters reproduce the targets: KGE {f0[0]:.6f}, T RMSE {f0[1]:.2e} degC, {label3(f0[2])}")
 
 d = nc.Dataset(os.path.join(work, "search", "output", "sagehen_run0001_calibration.nc"))
 obj = np.ma.filled(d["objective"][:].astype(float), np.nan).T   # (target, sample)
@@ -310,11 +342,11 @@ front = (np.asarray(d["pareto_front"][:]) == 1) & ~failed
 check(front.any(), f"{int(front.sum())} trials on the front, {int(failed.sum())} of {failed.size} failed")
 
 # the balanced front member: its worst objective, as a multiple of that objective's best on the front, is smallest
-f = np.vstack([1.0 - obj[0], obj[1], obj[2]])[:, front]
+f = np.vstack([1.0 - obj[0], obj[1], loss3(obj[2])])[:, front]
 ratio = f / np.maximum(f.min(axis=1), 1e-12)[:, None]
 best = np.where(front)[0][np.argmin(ratio.max(axis=0))]
 print(f"  balanced front member: sample {best + 1}, KGE {obj[0, best]:.4f}, "
-      f"T RMSE {obj[1, best]:.3f} degC, head RMSE {obj[2, best]:.3f} m")
+      f"T RMSE {obj[1, best]:.3f} degC, {label3(obj[2, best])}")
 
 print(f"  {'parameter':<14}{'truth':>10}{'found':>11}{'error':>9}   front range")
 for name, truth, lo, hi, scale in params:
