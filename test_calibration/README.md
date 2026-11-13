@@ -115,3 +115,16 @@ K (18.4%) and VKS (27.5%). The trial with the best heads (0.021 m) had Sy within
 recoverable below its truth: every good trial sat at 0.11, since the targets see VKS only when it is too
 high.
 
+On the mapped vegetation and soil and their respin (13 November 2026), both modes at the defaults ran
+300 trials in about 9.5 hours, none failed, and neither passed; the true parameters reproduced their targets
+exactly in both. Error of the balanced member, as % of each range:
+
+| Mode | `K_mult` | `Sy_mult` | `rhk_mult` | `k_soil` | `k_macropore` | Balanced member |
+| --- | --- | --- | --- | --- | --- | --- |
+| `heads` | 7.7 | 19.6 | 8.4 | 2.1 | 4.7 | KGE 0.948, 0.51 degC, 0.051 m |
+| `lowflow` | 0.6 | 11.0 | 10.7 | 1.1 | 0.1 | KGE 0.990, 0.08 degC, low-flow KGE 0.947 |
+
+Here the heads no longer pin Sy: the best-heads trial (0.034 m) has it 37% off. Low flow does better on Sy
+and no worse elsewhere, but stops short of its own optimum, low-flow KGE 0.963 against the truth's 1.0, with
+Sy and streambed K just past 10%; more generations may close it.
+
