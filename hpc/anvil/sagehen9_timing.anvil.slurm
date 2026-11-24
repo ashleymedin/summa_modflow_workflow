@@ -24,11 +24,14 @@ FM=../domain_sagehen9/settings/SUMMA/fileManager_gwe.txt
 CF=../domain_sagehen9/summa_modflow6_gwe.config
 HR=../domain_sagehen9/simulations/spinup/heads_gwe.bin
 
+# the MPI coupler takes no restart flags, only the namelist's
+sed "s|^ */ *$|  head_restart_read = '$HR'\n/|" "$T/domain_sagehen9/summa_modflow6_gwe.config" > "$T/mpi.config"
+
 echo "MPI ranks  seconds for 72 h"
 cd "$T/ex-gwf-sagehen-gwe"
 for n in 1 3 5 9; do
   s=$(date +%s.%N)
-  mpirun -np $n --bind-to none "$BIN/summa_modflow6_mpi_sundials_mizuroute.exe" "$FM" "$CF" --head-restart-read "$HR" > "$T/mpi_$n.log" 2>&1 || echo "failed, see mpi_$n.log"
+  mpirun -np $n --bind-to none "$BIN/summa_modflow6_mpi_sundials_mizuroute.exe" "$FM" "$T/mpi.config" > "$T/mpi_$n.log" 2>&1 || echo "failed, see mpi_$n.log"
   echo "$n  $(echo "$(date +%s.%N) - $s" | bc)"
 done
 

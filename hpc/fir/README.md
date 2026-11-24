@@ -6,10 +6,10 @@ builders already work, and copied to Fir's scratch. Fir needs only the executabl
 
 | File | Use |
 | --- | --- |
-| `env_sagehen.fir.bash` | modules, paths (`MF6_ROOT`, `SUMMA_ROOT`, `WORKFLOW`, `RUNS`) and one GRU thread per core a rank is given |
-| `build_coupled.fir.bash` | build libmf6 and SUMMA's coupled executables (MPI, SUNDIALS, mizuRoute, MODFLOW 6, OpenMP) |
+| `env_sagehen.fir.bash` | modules, paths (`MF6_ROOT`, `SUMMA_ROOT`, `WORKFLOW`, `RUNS`), one core a rank |
+| `build_coupled.fir.bash` | build libmf6 and SUMMA's coupled executables (MPI, SUNDIALS, mizuRoute, MODFLOW 6) |
 | `prepare_sagehen_calib.sh` | on your machine: build a lumped or grid run directory with Fir's paths in it |
-| `sagehen9_timing.fir.slurm` | time the 3396-HRU grid's 72 h event at 1, 2, 4, 5 and 8 threads |
+| `sagehen9_timing.fir.slurm` | time the 3396-HRU grid's 72 h event on 1, 3, 5 and 9 ranks of the MPI coupler |
 | `sagehen_calib.fir.slurm` | run one calibration from a run directory |
 
 ## Once
@@ -28,8 +28,9 @@ SUNDIALS is expected at `$HOME/local/sundials`, as for SUMMA's own `utils/hpc/fi
 $HOME/models/summa_modflow_workflow/hpc/fir/build_coupled.fir.bash
 ```
 
-It needs `summa_modflow6_opt_sundials_mizuroute.exe` (the calibration) and
-`summa_modflow6_serial_sundials_mizuroute.exe` (the timing) in `$SUMMA_ROOT/bin`.
+It needs `summa_modflow6_opt_sundials_mizuroute.exe` (the calibration),
+`summa_modflow6_mpi_sundials_mizuroute.exe` (the timing) and
+`summa_modflow6_sundials_mizuroute.exe` (its spin-up) in `$SUMMA_ROOT/bin`.
 
 ## 1. Time a trial
 
@@ -37,10 +38,8 @@ It needs `summa_modflow6_opt_sundials_mizuroute.exe` (the calibration) and
 sbatch $WORKFLOW/hpc/fir/sagehen9_timing.fir.slurm
 ```
 
-Prints seconds per 72 h at each thread count. A trial scores one water year (WY2018; WY2017 is the
-calibration's shared spin-up, run once), so a trial takes about 122 times the 72 h figure. The thread count
-where the time stops falling is the one to give each trial; with 9 GRUs, the largest holding 721 of the
-3387 cells, expect it near 5.
+Prints seconds per 72 h at each rank count; a calibration trial runs on one rank. A trial scores one water year (WY2018; WY2017 is the
+calibration's shared spin-up, run once), so a trial takes about 122 times the 72 h figure on one rank.
 
 ## 2. Prepare a run, on your machine
 
@@ -67,12 +66,6 @@ sbatch --ntasks=121 --time=1-00:00:00 $WORKFLOW/hpc/fir/sagehen_calib.fir.slurm 
 
 # the grid, one core a trial: fits one node at pop 120 (~generations x 5-10 h)
 sbatch --ntasks=121 $WORKFLOW/hpc/fir/sagehen_calib.fir.slurm grid_p120
-
-# the grid, 5 threads a trial, a small population on one node: checks the threading speedup in a real search
-sbatch --ntasks=13 --cpus-per-task=5 $WORKFLOW/hpc/fir/sagehen_calib.fir.slurm grid_p12
-
-# the grid, 5 threads a trial over 4 nodes (pop 120 x 5 = 600 cores)
-sbatch --nodes=4 --ntasks=121 --cpus-per-task=5 $WORKFLOW/hpc/fir/sagehen_calib.fir.slurm grid_p120
 ```
 
 Output, including `run.log` and the calibration file `output/sagehen_run0001_calibration.nc`, stays in

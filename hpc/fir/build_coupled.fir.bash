@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds libmf6 and SUMMA's coupled executables on Fir (MPI, SUNDIALS, mizuRoute, MODFLOW 6, OpenMP).
+# Builds libmf6 and SUMMA's coupled executables on Fir (MPI, SUNDIALS, mizuRoute, MODFLOW 6).
 # Run on a login node:  ./build_coupled.fir.bash
 set -euo pipefail
 
@@ -25,14 +25,12 @@ else
 fi
 meson install -C builddir
 
-# SUMMA; USE_OPENMP is ignored, with a warning, by a SUMMA checkout older than its OpenMP option
 cmake -B "$SUMMA_ROOT/build/cmake_build_fir_mf6" -S "$SUMMA_ROOT/build" \
   -DUSE_MPI=ON \
   -DUSE_SUNDIALS=ON \
   -DUSE_MIZUROUTE=ON \
   -DUSE_MODFLOW6=ON \
   -DMODFLOW6_LIB_DIR="$MF6_ROOT/bin" \
-  -DUSE_OPENMP=ON \
   -DSPECIFY_LAPACK_LINKS=OFF \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build "$SUMMA_ROOT/build/cmake_build_fir_mf6" --target all -j 8

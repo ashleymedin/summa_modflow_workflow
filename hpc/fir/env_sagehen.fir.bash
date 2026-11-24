@@ -15,10 +15,6 @@ export SUMMA_ROOT=${SUMMA_ROOT:-$MF6_ROOT/srcextern/summa}     # multi-calib
 export WORKFLOW=${WORKFLOW:-$HOME/models/summa_modflow_workflow}
 export RUNS=${RUNS:-$SCRATCH/sagehen}                          # run directories, made by prepare_sagehen_calib.sh
 
-# one GRU thread per core the rank was given; BLAS stays on the calling thread
-export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
-export OMP_STACKSIZE=256M
-export OMP_PLACES=cores
-export OMP_PROC_BIND=close
-export OMP_DYNAMIC=FALSE
+# one core a rank
+export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
