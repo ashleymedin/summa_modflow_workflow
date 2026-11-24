@@ -14,6 +14,6 @@ export WORKFLOW=${WORKFLOW:-$HOME/models/summa_modflow_workflow}
 export RUNS=${RUNS:-/anvil/scratch/$USER/sagehen}              # run directories, made by prepare_sagehen_calib.sh
 export LD_LIBRARY_PATH=$SUNDIALS_DIR/lib64:${LD_LIBRARY_PATH:-}
 
-# one core a trial
+# one core a trial; start MPI with mpirun, as this OpenMPI has no PMI for srun
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1

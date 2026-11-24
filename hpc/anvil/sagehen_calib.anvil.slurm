@@ -18,6 +18,6 @@ source "${WORKFLOW:-$HOME/models/summa_modflow_workflow}/hpc/anvil/env_sagehen.a
 ulimit -s unlimited
 cd "$RUNS/$RUN"
 echo "Run $RUNS/$RUN on $SLURM_JOB_NODELIST, $SLURM_NTASKS ranks, $(date)"
-srun -n "$SLURM_NTASKS" "$SUMMA_ROOT/bin/summa_modflow6_opt_sundials_mizuroute.exe" -c config.toml > run.log 2>&1
+mpirun -np "$SLURM_NTASKS" --bind-to core "$SUMMA_ROOT/bin/summa_modflow6_opt_sundials_mizuroute.exe" -c config.toml > run.log 2>&1
 echo "End $(date)"
 grep -E "^NSGA-II generation" run.log || true
