@@ -13,10 +13,11 @@ The MODFLOW model is ex-gwf-sagehen-gwe (SFR streams, GWE heat transport), copie
 enough for the forcing, saving heads, temperatures and budgets at its last step only, and an OBS6
 file writing the head at each observation cell every step.  GWE's water-table temperature is the
 temperature of the baseflow SUMMA hands the stream (deepTherml = aquiferTemp).  CND reads the solid
-thermal conductivity from kts1.txt, so a calibration can scale it.
+thermal conductivity from kts1.txt, so a calibration can scale it. With 2 layers it is
+ex-gwf-sagehen-gwe-2layer, with zones of each layer's K and CND left as built.
 
 Usage:
-    build_sagehen9_calibration.py <grid|lumped> <basin-mean forcing dir> <output domain dir>
+    build_sagehen9_calibration.py <grid|lumped> <basin-mean forcing dir> <output domain dir> [1|2 aquifer layers]
 """
 
 import os
@@ -31,7 +32,8 @@ import build_sagehen9 as b9
 from build_sagehen_uzf import add_uzf
 from make_sagehen_synthetic_well import ROW as WELL_ROW, COL as WELL_COL
 
-MF6_GWE = os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe")
+MF6_GWE = {1: os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe"),
+           2: os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe-2layer")}
 # observation cells (1-based row, column), one per decile of depth to water off the channel, in every GRU;
 # well1 is the synthetic well
 OBS_CELLS = {"well1": (WELL_ROW, WELL_COL), "well2": (9, 73), "well3": (20, 57), "well4": (51, 34), "well5": (18, 45),
@@ -41,7 +43,7 @@ LANDCOVER = os.path.join(os.path.dirname(b9.MF6), "landcover")
 DECISIONS = dict(b9.LATFLOW_DECISIONS, deepTherml="aquiferTemp", bcLowrTdyn="presTemp")
 
 
-def main(layout, forcing_src, out_dir):
+def main(layout, forcing_src, out_dir, nlay=1):
     top, active = b9.read_grid()
     fill, rec = b9.flow_directions(top, active)
     acc, order = b9.accumulate(rec, active)
@@ -171,7 +173,7 @@ def main(layout, forcing_src, out_dir):
     b9.write_topology(out_dir, gru_id, down, length, slope, area=np.array([len(cs) for cs in gcells]) * b9.CELL_AREA)
     write_map(out_dir, layout, gcells, gru_of, land_slot)
     write_settings(settings, src_set)
-    write_modflow(out_dir, nSteps, layout)
+    write_modflow(out_dir, nSteps, layout, nlay)
 
     print(f"{layout}: {nLand} land HRUs + {nGRU} stream HRUs in {nGRU} GRUs, {nSteps} forcing steps")
 
@@ -276,8 +278,8 @@ def write_cnd(mf6):
     open(os.path.join(mf6, "sagehen_gwe.cnd"), "w").write(cnd)
 
 
-def write_modflow(out_dir, nSteps, layout):
-    """ex-gwf-sagehen-gwe with one stress period of nSteps hours, saving its last step only.
+def write_modflow(out_dir, nSteps, layout, nlay):
+    """The nlay-layer GWE model with one stress period of nSteps hours, saving its last step only.
 
     Only the grid layout solves the base exchange in MODFLOW: a lumped HRU's flux answers its cells' mean
     head, not each cell's, so a per-cell correction there is not its linearisation.
@@ -285,7 +287,7 @@ def write_modflow(out_dir, nSteps, layout):
     base = ("  base_ghb_package_name = 'GHBB'  ! the base exchange, solved by MODFLOW against its new head\n"
             "  base_drn_package_name = 'DRNB'\n") if layout == "grid" else ""
     mf6 = os.path.join(out_dir, "mf6")
-    shutil.copytree(MF6_GWE, mf6, dirs_exist_ok=True)
+    shutil.copytree(MF6_GWE[nlay], mf6, dirs_exist_ok=True)
     with open(os.path.join(mf6, "sagehen.tdis"), "w") as f:
         f.write(f"""# Time discretisation - SECONDS, one stress period of {nSteps} hourly steps, the length of the forcing.
 BEGIN OPTIONS
@@ -303,8 +305,10 @@ END PERIODDATA
 """)
     add_uzf(mf6, UZF_RECHARGE)
     write_obs(mf6)
-    write_cnd(mf6)
-    write_zone_file(os.path.join(mf6, "kh1.txt"), os.path.join(mf6, "kzone1.txt"))
+    if nlay == 1:
+        write_cnd(mf6)
+    for k in range(1, nlay + 1):
+        write_zone_file(os.path.join(mf6, f"kh{k}.txt"), os.path.join(mf6, f"kzone{k}.txt"))
     write_zone_file(os.path.join(mf6, "sy1.txt"), os.path.join(mf6, "syzone1.txt"))
     with open(os.path.join(mf6, "sagehen.oc"), "w") as f:
         f.write("""# Output control - the last step only; a calibration trial is judged on SUMMA's output.
@@ -348,6 +352,6 @@ END PERIOD
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4 or sys.argv[1] not in ("grid", "lumped"):
+    if len(sys.argv) not in (4, 5) or sys.argv[1] not in ("grid", "lumped") or sys.argv[4:] not in ([], ["1"], ["2"]):
         sys.exit(__doc__)
-    main(sys.argv[1], os.path.abspath(sys.argv[2]), os.path.abspath(sys.argv[3]))
+    main(sys.argv[1], os.path.abspath(sys.argv[2]), os.path.abspath(sys.argv[3]), int((sys.argv[4:] or ["1"])[0]))

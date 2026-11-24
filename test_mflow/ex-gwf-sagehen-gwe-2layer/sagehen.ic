@@ -1,0 +1,6 @@
+# Initial conditions: starting heads (m), one file a layer.
+BEGIN GRIDDATA
+  STRT LAYERED
+    OPEN/CLOSE  strt1.txt
+    OPEN/CLOSE  strt2.txt
+END GRIDDATA

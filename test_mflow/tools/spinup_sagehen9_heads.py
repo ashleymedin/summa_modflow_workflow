@@ -14,7 +14,8 @@ recharge holds up, then settles them with coupled years:
      heads little
 
 The result replaces strt1.txt in a domain built by build_sagehen9_calibration.py, and is the strt1.txt
-every ../ex-gwf-sagehen* model carries.
+every ../ex-gwf-sagehen* model carries. A model with strt2.txt has two layers, and layer 2's heads go to
+<output strt file> with its trailing 1 a 2 (strt_x1.txt, strt_x2.txt).
 
 Usage:
     spinup_sagehen9_heads.py <domain dir> <coupler exe> <mf6 exe> <output strt file> [max years]
@@ -100,19 +101,39 @@ def mean_recharge(work, active):
     return recharge
 
 
+def layer_files(mf6):
+    """The model's STRT files, one a layer."""
+    return [os.path.join(mf6, n) for n in ("strt1.txt", "strt2.txt") if os.path.exists(os.path.join(mf6, n))]
+
+
+def output_files(output, nlay):
+    """Where each layer's heads go: output, then output with its trailing 1 a 2."""
+    if nlay == 1:
+        return [output]
+    root, ext = os.path.splitext(output)
+    if not root.endswith("1"):
+        sys.exit("a two-layer model's output strt file must end in 1 before its extension")
+    return [f"{root[:-1]}{k + 1}{ext}" for k in range(nlay)]
+
+
+def write_strt(paths, heads):
+    for path, h in zip(paths, heads):
+        write_array(path, h)
+
+
 def steady_heads(mf6_exe, work, strt, recharge):
     """MODFLOW 6 alone at steady state under a recharge array (m s-1)."""
     ss = os.path.join(work, "mf6_ss")
     shutil.rmtree(ss, ignore_errors=True)
     shutil.copytree(os.path.join(work, "mf6"), ss)
-    write_array(os.path.join(ss, "strt1.txt"), strt)
+    write_strt(layer_files(ss), strt)
     write_array(os.path.join(ss, "recharge.txt"), recharge)
     with open(os.path.join(ss, "sagehen.tdis"), "w") as f:
         f.write("BEGIN OPTIONS\n  TIME_UNITS SECONDS\nEND OPTIONS\n\nBEGIN DIMENSIONS\n  NPER 1\nEND DIMENSIONS\n\n"
                 "BEGIN PERIODDATA\n  1.0 1 1.0\nEND PERIODDATA\n")
-    with open(os.path.join(ss, "sagehen.sto"), "w") as f:
-        f.write("BEGIN GRIDDATA\n  ICONVERT\n    CONSTANT 1\n  SS\n    CONSTANT 1.0e-7\n  SY\n    OPEN/CLOSE sy1.txt\n"
-                "END GRIDDATA\n\nBEGIN PERIOD 1\n  STEADY-STATE\nEND PERIOD\n")
+    sto = os.path.join(ss, "sagehen.sto")
+    text = open(sto).read().replace("  TRANSIENT\n", "  STEADY-STATE\n")
+    open(sto, "w").write(text)
     with open(os.path.join(ss, "sagehen.rcha"), "w") as f:
         f.write("BEGIN OPTIONS\n  READASARRAYS\nEND OPTIONS\n\nBEGIN PERIOD 1\n  RECHARGE\n    OPEN/CLOSE recharge.txt\n"
                 "END PERIOD\n")
@@ -123,7 +144,7 @@ def steady_heads(mf6_exe, work, strt, recharge):
     open(nam, "w").writelines(lines)
     with open(os.path.join(work, "mf6_ss.log"), "w") as log:
         subprocess.run([mf6_exe], cwd=ss, stdout=log, stderr=subprocess.STDOUT, check=True)
-    return read_heads(os.path.join(ss, "sagehen.hds"))[1][-1]
+    return np.array(read_heads(os.path.join(ss, "sagehen.hds"))[1][-len(strt):])
 
 
 def main(domain, exe, mf6_exe, output, max_years=20):
@@ -140,8 +161,8 @@ def main(domain, exe, mf6_exe, output, max_years=20):
         f.write("scalarSoilDrainage | 24 | mean\n")
 
     top, active = b9.read_grid()
-    strt_path = os.path.join(work, "mf6", "strt1.txt")
-    strt = np.loadtxt(strt_path).reshape(b9.NROW, b9.NCOL)
+    strt_paths = layer_files(os.path.join(work, "mf6"))
+    strt = np.array([np.loadtxt(p).reshape(b9.NROW, b9.NCOL) for p in strt_paths])
 
     # 1-2: the heads the mean recharge of water years 2017-2018 holds up
     write_oc(os.path.join(work, "mf6"), "STEPS 17519")
@@ -149,25 +170,26 @@ def main(domain, exe, mf6_exe, output, max_years=20):
     recharge = mean_recharge(work, active)
     head = np.where(active, steady_heads(mf6_exe, work, strt, recharge), strt)
     print(f"steady state under {recharge[active].mean() * 3.1536e10:.0f} mm a year of recharge: depth to water "
-          f"median {np.median((top - head)[active]):.2f} m", flush=True)
+          f"median {np.median((top - head[0])[active]):.2f} m", flush=True)
     strt = head
-    write_array(strt_path, strt)
+    write_strt(strt_paths, strt)
 
     # 3: settle them under the coupled years
     write_oc(os.path.join(work, "mf6"), "STEPS 8760")
     for year in range(1, int(max_years) + 1):
-        head = np.where(active, run_coupled(exe, work, WY2017)[-1], strt)
-        change = np.abs(head - strt)[active]
+        head = np.where(active, np.array(run_coupled(exe, work, WY2017)[-len(strt):]), strt)
+        change = np.abs(head - strt)[:, active]
         print(f"year {year:2d}: head change median {np.median(change):.3f} m, 95th percentile "
               f"{np.percentile(change, 95):.3f} m, largest {change.max():.3f} m", flush=True)
         strt = head
-        write_array(strt_path, strt)
+        write_strt(strt_paths, strt)
         if np.median(change) < TOL_MEDIAN and np.percentile(change, 95) < TOL_P95:
             break
     else:
         print(f"not settled after {max_years} years; writing the last heads anyway")
 
-    shutil.copy(strt_path, output)
+    for src, dst in zip(strt_paths, output_files(output, len(strt))):
+        shutil.copy(src, dst)
     print(f"{output}: steady state, then {year} years of water year 2017")
 
 

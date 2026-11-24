@@ -5,7 +5,7 @@ One landflag-1 UZF cell per active cell, except the CHD outlet cells where the m
 ex-gwf-sagehen does. Parameters are the upstream example's, but for 3 trailing waves: VKS the cell's vertical conductivity,
 THTS from thts1.txt, THTR 0.1002 and EPS 4. THTI is the water content whose kinematic-wave flux
 VKS ((theta - THTR)/(THTS - THTR))^EPS carries the long-term mean recharge, so the unsaturated
-zone starts draining rather than filling. No ET, groundwater ET, seepage or mover: the coupler
+zone starts draining rather than filling. A model with vks1.txt (m/day) or thtr1.txt takes VKS or THTR from it. No ET, groundwater ET, seepage or mover: the coupler
 writes SINF each step and returns REJINF to the soil column, and EVT keeps groundwater ET.
 
 Usage:
@@ -35,7 +35,9 @@ def add_uzf(model_dir, rech_mean=RECH_MEAN):
     idomain = np.loadtxt(os.path.join(model_dir, "idomain1.txt"))
     nrow, ncol = idomain.shape
     active = idomain > 0
-    vks = load(model_dir, "kv1.txt").reshape(nrow, ncol) / 86400.0
+    has = lambda name: os.path.exists(os.path.join(model_dir, name))
+    vks = load(model_dir, "vks1.txt" if has("vks1.txt") else "kv1.txt").reshape(nrow, ncol) / 86400.0
+    thtr = load(model_dir, "thtr1.txt").reshape(nrow, ncol) if has("thtr1.txt") else np.full((nrow, ncol), THTR)
     thts = load(model_dir, "thts1.txt").reshape(nrow, ncol)
     chd = set()
     has_chd = "CHD6" in open(os.path.join(model_dir, "sagehen.nam")).read()
@@ -56,9 +58,10 @@ def add_uzf(model_dir, rech_mean=RECH_MEAN):
                 f"  NTRAILWAVES  {NTRAIL}\n  NWAVESETS  {NWAVESETS}\nEND DIMENSIONS\n\n"
                 "BEGIN PACKAGEDATA\n# iuzno lay row col landflag ivertcon surfdep vks thtr thts thti eps\n")
         for n, (i, j) in enumerate(cells, 1):
-            ts = max(thts[i, j], THTR + 0.02)
-            ti = THTR + (ts - THTR) * min(rech_mean / vks[i, j], 1.0) ** (1.0 / EPS)
-            f.write(f"  {n:4d} 1 {i + 1:3d} {j + 1:3d} 1 0 {SURFDEP} {vks[i, j]:.6e} {THTR} {ts:.4f} {ti:.4f} {EPS}\n")
+            tr = thtr[i, j]
+            ts = max(thts[i, j], tr + 0.02)
+            ti = tr + (ts - tr) * min(rech_mean / vks[i, j], 1.0) ** (1.0 / EPS)
+            f.write(f"  {n:4d} 1 {i + 1:3d} {j + 1:3d} 1 0 {SURFDEP} {vks[i, j]:.6e} {tr:g} {ts:.4f} {ti:.4f} {EPS}\n")
         f.write("END PACKAGEDATA\n\nBEGIN PERIOD 1\n# iuzno finf pet extdp extwc ha hroot rootact\n")
         for n in range(1, len(cells) + 1):
             f.write(f"  {n:4d} 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n")

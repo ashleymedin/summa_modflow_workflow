@@ -1,0 +1,13 @@
+# Output control - keep it light for a coupler smoke test: heads/budget every
+# 24th step (daily) plus the last step.  Bump to ALL if you need every step.
+BEGIN OPTIONS
+  BUDGET  FILEOUT  sagehen.cbc
+  HEAD    FILEOUT  sagehen.hds
+END OPTIONS
+
+BEGIN PERIOD 1
+  SAVE  HEAD    FREQUENCY 24
+  SAVE  BUDGET  FREQUENCY 24
+  SAVE  HEAD    LAST
+  SAVE  BUDGET  LAST
+END PERIOD

@@ -1,0 +1,20 @@
+# TEMPERATURE (degC) is the long-term recharge temperature at each cell's elevation.
+# The coupler also overwrites TEMPERATURE (__INPUT__/SAGEHEN/RCHA/AUXVAR, degC) with SUMMA's
+# drainage temperature; GWE's SSM reads it as the recharge temperature.
+# Array-based recharge (READASARRAYS).  The SUMMA coupler overwrites the RECHARGE
+# array in memory (SAGEHEN/RCHA/RECHARGE) every time step with the regridded SUMMA
+# soil-column drainage, in m/s.  The constant below is only the pre-coupling default
+# used when running mf6 stand-alone; it is a small non-zero background rate so the
+# water table does not collapse (and diverge) over a long zero-recharge stand-alone run.
+BEGIN OPTIONS
+  READASARRAYS
+  AUXILIARY  TEMPERATURE
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PERIOD 1
+  RECHARGE
+    CONSTANT  1.0e-8
+  TEMPERATURE
+    OPEN/CLOSE  rchtemp1.txt
+END PERIOD

@@ -14,7 +14,8 @@ Usage:
     spinup_sagehen9_cycles.py <domain dir> <coupler exe> <output strt file> <output state file> [max cycles]
 
 The coupler is the serial one, e.g. bin/summa_modflow6_sundials_mizuroute.exe. Everything runs in a
-scratch directory beside the output strt file and the domain is left untouched.
+scratch directory beside the output strt file and the domain is left untouched. A two-layer domain also
+writes layer 2's heads, as spinup_sagehen9_heads.py. COUPLER_LAUNCH, e.g. "srun -n 5", runs the MPI coupler.
 """
 
 import glob
@@ -26,6 +27,8 @@ import sys
 
 import numpy as np
 from netCDF4 import Dataset, num2date
+
+from spinup_sagehen9_heads import layer_files, output_files
 
 PERIOD = ("2016-10-01 01:00", "2018-09-30 23:00")
 TOL_MM = 5.0          # storage change over a cycle, basin mean
@@ -117,7 +120,7 @@ def read_restart_heads(path):
 
 def aquifer_change(prev, last, sy, top):
     """Water gained by the aquifer below the column base between two head restarts, basin mean mm."""
-    h0, h1 = read_restart_heads(prev)[2], read_restart_heads(last)[2]
+    h0, h1 = read_restart_heads(prev)[2][:sy.size], read_restart_heads(last)[2][:sy.size]   # layer 1
     return 1000 * float(np.mean(sy * (np.minimum(h1, top) - np.minimum(h0, top))))
 
 
@@ -130,9 +133,9 @@ def extrapolate(prev, last, r):
 
 
 def head_strt(restart, idomain, strt):
-    """A coupler head restart (reduced node order) as a full STRT array; inactive cells keep strt."""
+    """A coupler head restart (reduced node order) as STRT arrays, (layer, row, col); inactive cells keep strt."""
     head = strt.copy()
-    head[idomain > 0] = read_restart_heads(restart)[2]
+    head[:, idomain > 0] = read_restart_heads(restart)[2].reshape(len(strt), -1)
     return head
 
 
@@ -161,7 +164,7 @@ def main(domain, exe, out_strt, out_state, max_cycles=8):
         for old in glob.glob(os.path.join(work, "out", "*")):
             os.remove(old)
         write_file_manager(work, "coldState.nc" if c == 0 else f"restart_{c - 1}.nc")
-        cmd = [exe, os.path.join(work, "fileManager.txt"), os.path.join(work, "summa_modflow6.config"),
+        cmd = os.environ.get("COUPLER_LAUNCH", "").split() + [exe, os.path.join(work, "fileManager.txt"), os.path.join(work, "summa_modflow6.config"),
                "--head-restart-write", os.path.join(work, f"heads_{c}.bin")]
         if c > 0:
             cmd += ["--head-restart-read", os.path.join(work, f"heads_{c - 1}.bin")]
@@ -186,11 +189,12 @@ def main(domain, exe, out_strt, out_state, max_cycles=8):
     else:
         print(f"not settled after {max_cycles} cycles; writing the last state anyway")
 
-    strt = np.loadtxt(os.path.join(mf6, "strt1.txt")).reshape(idomain.shape)
+    strt = np.array([np.loadtxt(p).reshape(idomain.shape) for p in layer_files(mf6)])
     head = head_strt(os.path.join(work, f"heads_{c}.bin"), idomain, strt)
-    with open(out_strt, "w") as f:
-        for row in head:
-            f.write(" ".join(f"{v:.6g}" for v in row) + "\n")
+    for path, h in zip(output_files(out_strt, len(head)), head):
+        with open(path, "w") as f:
+            for row in h:
+                f.write(" ".join(f"{v:.6g}" for v in row) + "\n")
     shutil.copy(os.path.join(work, "settings", f"restart_{c}.nc"), out_state)
     print(f"{out_strt}, {out_state}: {c + 1} cycles of water years 2017-2018")
 

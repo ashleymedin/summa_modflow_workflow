@@ -1,0 +1,17 @@
+# GWE model name file: aquifer temperature on the GWF grid, degC.
+BEGIN OPTIONS
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PACKAGES
+  DIS6  sagehen_gwe.dis  dis
+  IC6   sagehen_gwe.ic   ic
+  ADV6  sagehen_gwe.adv  adv
+  CND6  sagehen_gwe.cnd  cnd
+  EST6  sagehen_gwe.est  est
+  SSM6  sagehen_gwe.ssm  ssm
+  SFE6  sagehen_gwe.sfe  SFE
+  UZE6  sagehen_gwe.uze  UZE
+  ESL6  sagehen_gwe.esl  esl
+  OC6   sagehen_gwe.oc   oc
+END PACKAGES
