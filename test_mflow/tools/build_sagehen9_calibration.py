@@ -14,7 +14,8 @@ enough for the forcing, saving heads, temperatures and budgets at its last step 
 file writing the head at each observation cell every step.  GWE's water-table temperature is the
 temperature of the baseflow SUMMA hands the stream (deepTherml = aquiferTemp).  CND reads the solid
 thermal conductivity from kts1.txt, so a calibration can scale it. With 2 layers it is
-ex-gwf-sagehen-gwe-2layer, with zones of each layer's K and CND left as built.
+ex-gwf-sagehen-gwe-2layer, CND left as built, with no K zones but layers.txt, and the SUMMA parameters its
+calibration fixes are set: Fcapil, and each HRU's water contents from its soil class's retention curve.
 
 Usage:
     build_sagehen9_calibration.py <grid|lumped> <basin-mean forcing dir> <output domain dir> [1|2 aquifer layers]
@@ -39,6 +40,7 @@ MF6_GWE = {1: os.path.join(os.path.dirname(b9.MF6), "ex-gwf-sagehen-gwe"),
 OBS_CELLS = {"well1": (WELL_ROW, WELL_COL), "well2": (9, 73), "well3": (20, 57), "well4": (51, 34), "well5": (18, 45),
              "well6": (33, 39), "well7": (62, 67), "well8": (36, 67), "well9": (42, 79), "well10": (49, 7)}
 UZF_RECHARGE = 0.049 / 3.15576e7   # m s-1, the land's mean drainage over the spin-up; a restart starts UZF from it
+FCAPIL = 0.07                      # fraction of pore volume, Colbeck (1974), as the glacier workflow
 LANDCOVER = os.path.join(os.path.dirname(b9.MF6), "landcover")
 DECISIONS = dict(b9.LATFLOW_DECISIONS, deepTherml="aquiferTemp", bcLowrTdyn="presTemp")
 
@@ -174,8 +176,31 @@ def main(layout, forcing_src, out_dir, nlay=1):
     write_map(out_dir, layout, gcells, gru_of, land_slot)
     write_settings(settings, src_set)
     write_modflow(out_dir, nSteps, layout, nlay)
+    if nlay == 2:
+        fix_parameters(settings, cat(soil_land, np.full(nGRU, s_type)))
 
     print(f"{layout}: {nLand} land HRUs + {nGRU} stream HRUs in {nGRU} GRUs, {nSteps} forcing steps")
+
+
+def fix_parameters(settings, soil):
+    """Fcapil at FCAPIL, and water contents from each HRU's ROSETTA curve in trialParams.nc, as the glacier workflow's
+    upland soils: field capacity at -33 kPa, wilting at -1500 kPa, the transpiration point midway."""
+    path = os.path.join(settings, "localParamInfo.txt")
+    text = open(path).read()
+    new = re.sub(r"(?m)^(Fcapil\s*\|\s*)[\d.]+", rf"\g<1>{FCAPIL:.4f}", text)
+    assert new != text
+    open(path, "w").write(new)
+
+    table = open(os.path.join(settings, "TBL_SOILPARM.TBL")).read().split("ROSETTA\n")[1].splitlines()
+    out = {n: np.empty(len(soil)) for n in ("critSoilWilting", "critSoilTranspire", "fieldCapacity")}
+    for k in np.unique(soil):
+        tr, ts, alpha, n = (float(v) for v in table[int(k)].split()[1:5])
+        wilt, fc = (tr + (ts - tr) * (1.0 + (-alpha * h) ** n) ** (1.0 / n - 1.0) for h in (1500.0 / 9.81, 33.0 / 9.81))
+        for name, v in zip(out, (wilt, 0.5 * (wilt + fc), fc)):
+            out[name][soil == k] = v
+    with Dataset(os.path.join(settings, "trialParams.nc"), "a") as d:
+        for name, v in out.items():
+            d.createVariable(name, "f8", ("hru",))[:] = v
 
 
 def dominant_class(classes, hru_cells):
@@ -307,8 +332,7 @@ END PERIODDATA
     write_obs(mf6)
     if nlay == 1:
         write_cnd(mf6)
-    for k in range(1, nlay + 1):
-        write_zone_file(os.path.join(mf6, f"kh{k}.txt"), os.path.join(mf6, f"kzone{k}.txt"))
+        write_zone_file(os.path.join(mf6, "kh1.txt"), os.path.join(mf6, "kzone1.txt"))
     write_zone_file(os.path.join(mf6, "sy1.txt"), os.path.join(mf6, "syzone1.txt"))
     with open(os.path.join(mf6, "sagehen.oc"), "w") as f:
         f.write("""# Output control - the last step only; a calibration trial is judged on SUMMA's output.

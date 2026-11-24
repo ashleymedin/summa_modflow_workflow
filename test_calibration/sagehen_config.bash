@@ -1,57 +1,38 @@
 # Writes the Sagehen calibration's SUMMA TOML configuration; sourced by test_calibration_sagehen.sh and hpc/fir.
 #   write_sagehen_config <config.toml> <work dir> <observations dir> <mizuRoute settings dir> <n_samples> <population> [layers]
-# Two layers search each layer's K, SUMMA parameters as the Bow test and the glacier workflow's snow set, and score low flows in place of the well, whose record is the one-layer model's.
+# Two layers search each layer's K, a reduced SUMMA set with the soil at its mapped classes, and score low flows in place of the well, whose record is the one-layer model's.
 # The work dir holds domain/ (from build_sagehen9_calibration.py), state/ and output/.
 write_sagehen_config() {
-  local out=$1 work=$2 obs=$3 mizu=$4 n_samples=$5 population=$6 layers=${7:-1} kpars third summa
+  local out=$1 work=$2 obs=$3 mizu=$4 n_samples=$5 population=$6 layers=${7:-1} kpars third summa sy='"sy1.txt"'
   if [ "${layers}" = 2 ]; then
+    sy='["sy.txt", "por.txt"]'
     summa=$(cat <<EOF
-# every member of an ordered chain is listed, so it is searched
-k_soil             = { transformation = "log" }
+# one value for the basin: these carry no mapped pattern; soil and canopy stay at each HRU's classes
 k_macropore        = { transformation = "log" }
-theta_sat          = {}
 qSurfScale         = {}
-summerLAI          = {}
 frozenPrecipMultip = {}
-Fcapil             = {}
-tempCritRain       = {}
-heightCanopyTop    = {}
-heightCanopyBottom = {}
 windReductionParam = {}
-vGn_n              = {}
 routingGammaScale  = { transformation = "log" }
 routingGammaShape  = {}
-theta_res          = {}
-critSoilWilting    = {}
-critSoilTranspire  = {}
-fieldCapacity      = {}
 k_snow             = {}
 mw_exp             = {}
 albedoMax          = {}
 albedoDecayRate    = { lower = 200000.0, upper = 5000000.0 }
 
 
-[[parameter_dependencies.ordered]]
+# a factor on each HRU's class value
+[calibration.spatial_multipliers]
 
-parameters   = ["heightCanopyBottom", "heightCanopyTop"]
-gap_fraction = 0.25
-
-[[parameter_dependencies.ordered]]
-
-parameters   = ["theta_res", "critSoilWilting", "critSoilTranspire", "theta_sat"]
-gap_fraction = 0.025
-
-[[parameter_dependencies.ordered]]
-
-parameters   = ["theta_res", "fieldCapacity", "theta_sat"]
-gap_fraction = 0.025
+k_soil             = { lower = 0.1, upper = 10.0, transformation = "log" }
 EOF
 )
     kpars=$(cat <<EOF
 [[calibration.modflow_parameter]]
 
 name  = "K1_mult"
-files = ["kh1.txt", "kv1.txt"]
+files = ["kh.txt", "kv.txt"]
+zone_file = "layers.txt"
+zone = 1
 lower = 0.2
 upper = 5.0
 transformation = "log"
@@ -59,7 +40,9 @@ transformation = "log"
 [[calibration.modflow_parameter]]
 
 name  = "K2_mult"
-files = ["kh2.txt", "kv2.txt"]
+files = ["kh.txt", "kv.txt"]
+zone_file = "layers.txt"
+zone = 2
 lower = 0.2
 upper = 5.0
 transformation = "log"
@@ -244,7 +227,7 @@ ${kpars}
 [[calibration.modflow_parameter]]
 
 name  = "Sy_mult"
-files = "sy1.txt"
+files = ${sy}
 lower = 0.5
 upper = 1.5
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build ex-gwf-sagehen-gwe-2layer: ex-gwf-sagehen-gwe (SFR and GWE) on GSFLOW's two-layer aquifer.
 
-Bottoms, K, K33, Sy and Ss are ex-gwf-sagehen-2layer's (build_sagehen_2layer.py), one file a layer so a
-calibration can scale each: kh1, kh2, kv1, kv2 (m/day), sy1, bot1, bot2, strt1, strt2. The stream, drain, UZF,
+Bottoms, K, K33, Sy and Ss are ex-gwf-sagehen-2layer's (build_sagehen_2layer.py). What a calibration scales holds
+both layers in one file, read whole (SUMMA rewrites it with its own line breaks, and LAYERED arrays are read row by
+row): kh, kv (m/day), sy and por, with layers.txt the layer of each value, to scale one layer. sy1 is layer 1's. The stream, drain, UZF,
 base exchange and recharge packages stay on layer 1. UZF's VKS and THTS are GSFLOW's, with THTR = THTS - Sy as
 MODFLOW-2005 sets it, and SFR's streambed K and thickness are GSFLOW's on ex-gwf-sagehen-sfr's network; the drain
 conductance is layer 1's kh. Layer 2 is confined, so it has no Sy; its GWE porosity is layer 1's Sy.
@@ -24,7 +25,7 @@ import numpy as np
 
 import build_sagehen_gwe as g
 from build_sagehen9 import CELL_AREA, HERE, NCOL, NROW
-from build_sagehen_2layer import GSFLOW, fill_nearest, read_arrays
+from build_sagehen_2layer import GSFLOW, fill_nearest, read_arrays, write_layers
 from build_sagehen_uzf import add_uzf
 
 GWE1 = os.path.join(HERE, "..", "ex-gwf-sagehen-gwe")
@@ -37,8 +38,8 @@ BED_K, BED_THK = 5.0, 1.0      # GSFLOW SFR streambed, m/day and m
 g.BED_THK = BED_THK               # the bed SFE conducts through
 
 
-def layered(name, suffix=""):
-    return "".join(f"    OPEN/CLOSE  {name}{k}.txt{suffix}\n" for k in range(1, NLAY + 1))
+def layered(name):
+    return "".join(f"    OPEN/CLOSE  {name}{k}.txt\n" for k in range(1, NLAY + 1))
 
 
 def rewrite(path, rows):
@@ -88,9 +89,11 @@ def main(out):
     arr = {n: np.loadtxt(os.path.join(GWF2, f"{n}.txt")).reshape(NLAY, NROW, NCOL) for n in ("bot", "kh", "kv", "sy")}
     for k in range(NLAY):
         np.savetxt(os.path.join(out, f"bot{k + 1}.txt"), arr["bot"][k], fmt="%10.3f")
-        np.savetxt(os.path.join(out, f"kh{k + 1}.txt"), arr["kh"][k], fmt="%12.5e")
-        np.savetxt(os.path.join(out, f"kv{k + 1}.txt"), arr["kv"][k], fmt="%12.5e")
     np.savetxt(os.path.join(out, "sy1.txt"), arr["sy"][0], fmt="%8.4f")
+    for name in ("kh", "kv", "sy"):
+        shutil.copy(os.path.join(GWF2, f"{name}.txt"), out)
+    write_layers(os.path.join(out, "por.txt"), [arr["sy"][0]] * NLAY, "%8.4f")
+    write_layers(os.path.join(out, "layers.txt"), [np.full((NROW, NCOL), k + 1) for k in range(NLAY)], "%d")
     shutil.copy(os.path.join(out, "strt1.txt"), os.path.join(out, "strt2.txt"))
     kh = arr["kh"][0] * PER_DAY
     active = np.loadtxt(os.path.join(out, "idomain1.txt")) > 0
@@ -107,14 +110,8 @@ def main(out):
     g.write(os.path.join(out, "sagehen.dis"), dis)
     g.write(os.path.join(out, "sagehen_gwe.dis"),
             dis.replace("  LENGTH_UNITS  METERS\n", "  LENGTH_UNITS  METERS\n  NOGRB\n"))
-    f = f"  FACTOR  {PER_DAY:.15g}"
-    npf = open(os.path.join(GWF2, "sagehen.npf")).read()
-    npf = re.sub(r"  K\n.*\n", "  K LAYERED\n" + layered("kh", f), npf)
-    npf = re.sub(r"  K33\n.*\n", "  K33 LAYERED\n" + layered("kv", f), npf)
-    g.write(os.path.join(out, "sagehen.npf"), npf.replace("(kh.txt, kv.txt)", "(kh1, kh2, kv1, kv2.txt)"))
-    sto = open(os.path.join(GWF2, "sagehen.sto")).read()
-    g.write(os.path.join(out, "sagehen.sto"),
-            re.sub(r"  SY\n.*\n", "  SY LAYERED\n    OPEN/CLOSE  sy1.txt\n    CONSTANT  0.0\n", sto).replace("(sy.txt,", "(sy1.txt,"))
+    for name in ("sagehen.npf", "sagehen.sto"):
+        shutil.copy(os.path.join(GWF2, name), out)
     g.write(os.path.join(out, "sagehen.ic"),
             f"# Initial conditions: starting heads (m), one file a layer.\nBEGIN GRIDDATA\n  STRT LAYERED\n{layered('strt')}END GRIDDATA\n")
 
@@ -145,7 +142,7 @@ def main(out):
 
     est = os.path.join(out, "sagehen_gwe.est")
     g.write(est, open(est).read().replace("  POROSITY\n    OPEN/CLOSE  sy1.txt\n",
-                                          "  POROSITY LAYERED\n    OPEN/CLOSE  sy1.txt\n    OPEN/CLOSE  sy1.txt\n"))
+                                          "  POROSITY\n    OPEN/CLOSE  por.txt\n"))
     g.write(os.path.join(out, "sagehen_gwe.ic"), f"BEGIN GRIDDATA\n  STRT\n    CONSTANT  {g.STRT}\nEND GRIDDATA\n")
     nam = os.path.join(out, "sagehen_gwe.nam")
     g.write(nam, re.sub(r"  ESL6.*\n", "", open(nam).read()))
