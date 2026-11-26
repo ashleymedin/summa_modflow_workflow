@@ -17,3 +17,11 @@ export LD_LIBRARY_PATH=$SUNDIALS_DIR/lib64:${LD_LIBRARY_PATH:-}
 # one core a trial; start MPI with mpirun, as this OpenMPI has no PMI for srun
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
+
+# sbatch, refused while this account has 8 jobs queued or running, the limit asked of us on Anvil
+export MAX_JOBS=${MAX_JOBS:-8}
+submit() {
+  local n; n=$(squeue -h -u "$USER" | wc -l)
+  if [ "$n" -ge "$MAX_JOBS" ]; then echo "submit: $n jobs queued or running, the limit is $MAX_JOBS" >&2; return 1; fi
+  sbatch "$@"
+}

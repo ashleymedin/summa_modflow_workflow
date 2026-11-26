@@ -9,6 +9,7 @@
 
 # One Sagehen calibration from a run directory made by prepare_sagehen_calib.sh: rank 0 coordinates, every
 # other rank runs one trial at a time on one core, so ranks = population + 1. Anvil allows 96 h.
+# Submit with submit (env_sagehen.anvil.bash), which keeps us to 8 jobs queued or running.
 #   sbatch sagehen_calib.anvil.slurm <run>                                          # pop 120, one node
 #   sbatch -p shared --ntasks=41 --time=12:00:00 sagehen_calib.anvil.slurm <run>    # pop 40, charged by the core
 set -eo pipefail
